@@ -1,0 +1,35 @@
+meta {
+  name: Rol incorrecto (debe dar 403)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/eventos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenCliente}}
+}
+
+body:json {
+  "titulo": "Concierto de Prueba",
+  "descripcion": "Un CLIENTE no puede crear eventos, debe fallar con 403",
+  "fecha": "2026-12-15",
+  "hora": "18:00",
+  "direccion": "Calle Prueba 5",
+  "ciudad": "Oaxaca de Juárez",
+  "estado": "OAX",
+  "categoriaId": 1,
+  "precio": 150,
+  "estadoVenta": "onsale",
+  "artistas": ["Compañía Prueba"]
+}
+
+tests {
+  test("CLIENTE creando evento devuelve 403", function () {
+    expect(res.status).to.equal(403);
+  });
+}

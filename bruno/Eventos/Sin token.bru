@@ -1,0 +1,31 @@
+meta {
+  name: Sin token (debe dar 401)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/eventos
+  body: json
+  auth: none
+}
+
+body:json {
+  "titulo": "Concierto de Prueba",
+  "descripcion": "Sin token debe fallar con 401",
+  "fecha": "2026-12-15",
+  "hora": "18:00",
+  "direccion": "Calle Prueba 5",
+  "ciudad": "Oaxaca de Juárez",
+  "estado": "OAX",
+  "categoriaId": 1,
+  "precio": 150,
+  "estadoVenta": "onsale",
+  "artistas": ["Compañía Prueba"]
+}
+
+tests {
+  test("Sin token devuelve 401", function () {
+    expect(res.status).to.equal(401);
+  });
+}

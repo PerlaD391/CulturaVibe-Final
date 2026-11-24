@@ -1,0 +1,41 @@
+# Dependencias y archivos generados
+node_modules/
+dist/
+target/
+
+# Variables de entorno y secretos (nunca se suben)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+application-local.properties
+application-secrets.properties
+secrets/
+
+# Logs
+*.log
+logs/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores e IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Java / Maven
+*.class
+*.jar
+*.war
+*.ear
+
+# Bruno (archivos locales de cada quien)
+bruno/.bru

@@ -1,0 +1,17 @@
+meta {
+  name: Listar eventos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/eventos?page=0&size=12
+  body: none
+  auth: none
+}
+
+tests {
+  test("Listar eventos devuelve 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Validacion (debe dar 400)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/eventos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  "descripcion": "Evento sin titulo ni fecha, debe fallar la validacion"
+}
+
+tests {
+  test("Cuerpo invalido devuelve 400", function () {
+    expect(res.status).to.equal(400);
+  });
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Crear reserva
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/reservas
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenCliente}}
+}
+
+body:json {
+  "eventoId": 1,
+  "cantidad": 2
+}
+
+script:post-response {
+  bru.setVar("reservaId", res.body.id);
+}
+
+tests {
+  test("Crear reserva devuelve 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

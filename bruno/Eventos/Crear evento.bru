@@ -1,0 +1,41 @@
+meta {
+  name: Crear evento
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/eventos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  "titulo": "Concierto de Prueba",
+  "descripcion": "Concierto creado desde Bruno",
+  "fecha": "2026-12-15",
+  "hora": "18:00",
+  "direccion": "Calle Prueba 5",
+  "ciudad": "Oaxaca de Juárez",
+  "estado": "OAX",
+  "categoriaId": 1,
+  "precio": 150,
+  "estadoVenta": "onsale",
+  "url": "https://www.ticketmaster.com.mx",
+  "imagenUrl": "",
+  "artistas": ["Compañía Prueba"]
+}
+
+script:post-response {
+  bru.setVar("eventoId", res.body.id);
+}
+
+tests {
+  test("Crear evento devuelve 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

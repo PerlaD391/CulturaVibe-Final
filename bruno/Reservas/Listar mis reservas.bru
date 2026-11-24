@@ -1,0 +1,21 @@
+meta {
+  name: Listar mis reservas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/reservas/mis
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenCliente}}
+}
+
+tests {
+  test("Listar mis reservas devuelve 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

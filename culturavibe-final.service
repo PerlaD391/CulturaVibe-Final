@@ -1,0 +1,25 @@
+# culturavibe-final.service — BORRADOR, copiar a /etc/systemd/system/ en el VPS
+# Uso:
+#   scp culturavibe-final.service root@13.140.226.55:/etc/systemd/system/culturavibe-final.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now culturavibe-final
+#   sudo systemctl status culturavibe-final
+# Requiere /opt/springboot-final/.env con DB_URL, DB_USER, DB_PASSWORD,
+# JWT_SECRET, CORS_ALLOWED_ORIGINS y las claves de Vonage/WhatsApp.
+# Spring Boot NO lee un .env por sí mismo: EnvironmentFile= es lo que lo carga.
+[Unit]
+Description=CulturaVibe Proyecto Final (Spring Boot, puerto 8086)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/springboot-final
+EnvironmentFile=/opt/springboot-final/.env
+ExecStart=/usr/bin/java -jar /opt/springboot-final/culturavibe-final-0.0.1-SNAPSHOT.jar
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="CulturaVibe">
+  <defs>
+    <linearGradient id="cv-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#d946ef"/>
+    </linearGradient>
+    <linearGradient id="cv-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f0abfc"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <!-- Fondo redondeado -->
+  <rect x="4" y="4" width="112" height="112" rx="26" fill="url(#cv-bg)"/>
+  <!-- C estilizada: arco abierto a la derecha, como un escenario -->
+  <path d="M82 38 A26 26 0 1 0 82 82" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <!-- Ondas de sonido saliendo de la C -->
+  <path d="M62 48 q10 12 0 24" fill="none" stroke="url(#cv-wave)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M74 42 q16 18 0 36" fill="none" stroke="url(#cv-wave)" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+  <!-- Punto: el público / el foco -->
+  <circle cx="52" cy="60" r="7" fill="#ffffff"/>
+</svg>

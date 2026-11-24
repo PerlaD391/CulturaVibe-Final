@@ -1,0 +1,21 @@
+meta {
+  name: Cancelar reserva
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/reservas/{{reservaId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenCliente}}
+}
+
+tests {
+  test("Cancelar reserva devuelve 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

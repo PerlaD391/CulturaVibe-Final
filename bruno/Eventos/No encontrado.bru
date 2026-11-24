@@ -1,0 +1,17 @@
+meta {
+  name: No encontrado (debe dar 404)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/eventos/999999
+  body: none
+  auth: none
+}
+
+tests {
+  test("Evento inexistente devuelve 404", function () {
+    expect(res.status).to.equal(404);
+  });
+}
