@@ -28,10 +28,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const register = useCallback(async ({ nombre, email, password, telefono }) => {
+  const register = useCallback(async ({ nombre, email, password, telefono, rol }) => {
     setLoading(true);
     try {
-      const next = await authService.register({ nombre, email, password, telefono });
+      const next = await authService.register({ nombre, email, password, telefono, rol });
       setAuth(next);
       return next;
     } finally {

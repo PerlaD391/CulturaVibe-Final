@@ -39,12 +39,13 @@ export const login = async ({ email, password }) => {
   return auth;
 };
 
-export const register = async ({ nombre, email, password, telefono }) => {
+export const register = async ({ nombre, email, password, telefono, rol }) => {
   const { data } = await api.post('/api/auth/register', {
     nombre,
     email,
     password,
     ...(telefono ? { telefono } : {}),
+    ...(rol ? { rol } : {}),
   });
   const auth = normalizeAuth(data);
   storeAuth(auth);

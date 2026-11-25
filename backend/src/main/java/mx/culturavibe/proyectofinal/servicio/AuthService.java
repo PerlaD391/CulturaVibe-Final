@@ -71,20 +71,32 @@ public class AuthService implements UserDetailsService {
 				.orElseThrow(() -> new UsernameNotFoundException("No existe un usuario con el correo " + email));
 	}
 
-	// El registro público siempre crea CLIENTE; los roles ADMIN y
-	// ORGANIZADOR los asigna un ADMIN desde /api/usuarios.
+	// El registro público crea CLIENTE por defecto; también se puede
+	// elegir ORGANIZADOR (empresa). El rol ADMIN no se puede elegir
+	// al registrarse; lo asigna otro ADMIN desde /api/usuarios.
 	public AuthRespuesta registrar(RegistroDTO dto) {
 		if (usuarios.existsByEmailIgnoreCase(dto.email())) {
 			throw new IllegalStateException("Ya existe una cuenta con el correo " + dto.email());
 		}
-		Rol cliente = roles.findByNombreIgnoreCase("CLIENTE")
-				.orElseThrow(() -> new IllegalStateException("No existe el rol CLIENTE; revisa el seed de la base de datos"));
+		String rolPedido = dto.rol() == null ? "" : dto.rol().trim();
+		String nombreRol;
+		if (rolPedido.isEmpty() || rolPedido.equalsIgnoreCase("CLIENTE")) {
+			nombreRol = "CLIENTE";
+		} else if (rolPedido.equalsIgnoreCase("ORGANIZADOR")) {
+			nombreRol = "ORGANIZADOR";
+		} else if (rolPedido.equalsIgnoreCase("ADMIN")) {
+			throw new IllegalArgumentException("El rol ADMIN no se puede elegir al registrarse");
+		} else {
+			throw new IllegalArgumentException("El rol " + dto.rol() + " no es válido");
+		}
+		Rol rol = roles.findByNombreIgnoreCase(nombreRol)
+				.orElseThrow(() -> new IllegalStateException("No existe el rol " + nombreRol + "; revisa el seed de la base de datos"));
 		Usuario usuario = new Usuario(dto.nombre(), dto.email(),
-				passwordEncoder.encode(dto.password()), dto.telefono(), cliente);
+				passwordEncoder.encode(dto.password()), dto.telefono(), rol);
 		usuarios.save(usuario);
 		emailService.enviarBienvenida(usuario.getEmail(), usuario.getNombre());
 		String token = jwtService.generarToken(usuario.getEmail());
-		return AuthRespuesta.conToken(token, usuario.getEmail(), usuario.getNombre(), cliente.getNombre());
+		return AuthRespuesta.conToken(token, usuario.getEmail(), usuario.getNombre(), rol.getNombre());
 	}
 
 	public AuthRespuesta login(LoginDTO dto) {

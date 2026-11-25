@@ -6,9 +6,9 @@ import { apiErrorMessage, extractFieldErrors } from '../services/api';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 
-// Registro real contra POST /api/auth/register (JWT). El rol lo asigna
-// el backend (las cuentas nuevas entran como CLIENTE); la política de
-// contraseña se valida en tiempo real bajo el campo.
+// Registro real contra POST /api/auth/register (JWT). El rol lo elige
+// el usuario: CLIENTE (por defecto) u ORGANIZADOR (empresa); la política
+// de contraseña se valida en tiempo real bajo el campo.
 export default function Register() {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ export default function Register() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [rol, setRol] = useState('CLIENTE');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -52,6 +53,7 @@ export default function Register() {
         email: email.trim(),
         password,
         telefono: telefono.trim() || undefined,
+        rol,
       });
       navigate('/', { replace: true });
     } catch (err) {
@@ -112,6 +114,28 @@ export default function Register() {
               onChange={(e) => setTelefono(e.target.value)}
               className={inputClass(Boolean(fieldErrors.telefono))}
             />
+          </FormField>
+
+          <FormField
+            label="Tipo de cuenta"
+            error={fieldErrors.rol}
+            hint={
+              rol === 'ORGANIZADOR'
+                ? 'Las empresas organizadoras pueden crear y gestionar sus eventos.'
+                : 'Reserva eventos y gestiona tus reservas.'
+            }
+          >
+            <span className="relative flex items-center">
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="w-full appearance-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 pr-10 text-sm font-medium text-white outline-none focus:border-violet-500"
+              >
+                <option value="CLIENTE">Cliente</option>
+                <option value="ORGANIZADOR">Empresa organizadora</option>
+              </select>
+              <Icon name="chevronDown" size={16} className="pointer-events-none absolute right-3 text-white" />
+            </span>
           </FormField>
 
           <FormField

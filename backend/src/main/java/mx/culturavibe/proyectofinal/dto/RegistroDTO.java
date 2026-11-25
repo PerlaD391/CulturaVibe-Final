@@ -17,6 +17,9 @@ public record RegistroDTO(
 		@Pattern(regexp = PoliticaPassword.REGEXP, message = PoliticaPassword.MENSAJE)
 		String password,
 		@Size(max = 20, message = "El teléfono no puede pasar de 20 caracteres")
-		String telefono
+		String telefono,
+		// Rol elegido al registrarse: CLIENTE (por defecto) u ORGANIZADOR
+		// (empresa). Opcional; ADMIN no se puede elegir por aquí.
+		String rol
 ) {
 }
