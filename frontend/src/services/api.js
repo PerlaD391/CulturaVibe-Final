@@ -70,7 +70,7 @@ const pickMessage = (item) => item?.message || item?.mensaje || item?.defaultMes
 export const extractFieldErrors = (error) => {
   const data = error?.response?.data;
   if (!data) return {};
-  const raw = data.errors || data.fieldErrors || data.violations || null;
+  const raw = data.errors || data.errores || data.fieldErrors || data.violations || null;
   if (Array.isArray(raw)) {
     const out = {};
     raw.forEach((item) => {
