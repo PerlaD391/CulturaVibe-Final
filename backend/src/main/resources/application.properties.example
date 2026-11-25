@@ -36,5 +36,11 @@
 # WHATSAPP_ACCESS_TOKEN=tu_token_temporal_de_meta
 # WHATSAPP_TEMPLATE_NAME=hello_world
 
+# --- Ticketmaster (sincronización de eventos a MySQL) ---
+# La llave se genera en developer.ticketmaster.com y se pasa por
+# variable de entorno; nunca se pega en el código ni en GitHub.
+# Sin esta llave, POST /api/admin/ticketmaster/sync responde 503.
+# TICKETMASTER_API_KEY=tu_llave_de_ticketmaster
+
 # --- CORS (orígenes separados por comas) ---
 # CORS_ALLOWED_ORIGINS=http://localhost:5173,http://13.140.226.55,https://13.140.226.55

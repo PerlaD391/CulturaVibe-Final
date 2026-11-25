@@ -69,6 +69,17 @@ public class Evento {
 	@Column(columnDefinition = "TEXT")
 	private String artistas;
 
+	// Origen del evento: "LOCAL" (semilla o creado en la app) o
+	// "TICKETMASTER" (importado por la sincronización). La columna
+	// tiene DEFAULT 'LOCAL' en la migración V2.
+	@Column(length = 20, nullable = false)
+	private String fuente = "LOCAL";
+
+	// Id del evento en Ticketmaster (solo para fuente TICKETMASTER).
+	// Único en la base de datos: evita importar el mismo evento dos veces.
+	@Column(name = "external_id", length = 100)
+	private String externalId;
+
 	@CreationTimestamp
 	@Column(name = "creado_en")
 	private LocalDateTime creadoEn;
@@ -194,6 +205,22 @@ public class Evento {
 
 	public void setArtistas(String artistas) {
 		this.artistas = artistas;
+	}
+
+	public String getFuente() {
+		return fuente;
+	}
+
+	public void setFuente(String fuente) {
+		this.fuente = fuente;
+	}
+
+	public String getExternalId() {
+		return externalId;
+	}
+
+	public void setExternalId(String externalId) {
+		this.externalId = externalId;
 	}
 
 	public LocalDateTime getCreadoEn() {
