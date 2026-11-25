@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -76,6 +77,19 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request) {
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 				.body(cuerpo(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos", request));
+	}
+
+	// Cuenta suspendida (por ejemplo tras 5 intentos fallidos): el
+	// proveedor de autenticación lanza DisabledException cuando la
+	// cuenta tiene activo=false. Se responde 403 con el mensaje de
+	// recuperación en vez de un 500.
+	@ExceptionHandler(DisabledException.class)
+	public ResponseEntity<Map<String, Object>> cuentaSuspendida(DisabledException e,
+			HttpServletRequest request) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+				.body(cuerpo(HttpStatus.FORBIDDEN,
+						"Tu cuenta está suspendida por varios intentos fallidos. Revisa tu correo para recuperarla.",
+						request));
 	}
 
 	@ExceptionHandler(UsernameNotFoundException.class)

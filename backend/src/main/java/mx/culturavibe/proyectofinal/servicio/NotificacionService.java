@@ -67,6 +67,27 @@ public class NotificacionService {
 		enviarWhatsapp(usuario, telefono, texto);
 	}
 
+	// Código de verificación por SMS al registrarse. Devuelve true si
+	// se intentó el envío (hay teléfono y un proveedor configurado);
+	// si no hay teléfono o no hay proveedor, solo queda el warn y el
+	// registro sigue solo con el correo. Nunca lanza excepciones.
+	public boolean enviarCodigoVerificacion(Usuario usuario, String codigo) {
+		if (usuario.getTelefono() == null || usuario.getTelefono().isBlank()) {
+			log.warn("El usuario {} no tiene teléfono; el código de verificación solo va por correo",
+					usuario.getEmail());
+			return false;
+		}
+		if (!vonage.configurado() && !twilioConfigurado()) {
+			log.warn("Ni Vonage ni Twilio están configurados; el código de verificación de {} solo va por correo",
+					usuario.getEmail());
+			return false;
+		}
+		String telefono = usuario.getTelefono().replace(" ", "");
+		String texto = "CulturaVibe: tu código de verificación es " + codigo + ". Válido por 15 minutos.";
+		enviarSms(usuario, telefono, texto);
+		return true;
+	}
+
 	// El SMS sale por Vonage si está configurado; si no, por Twilio si
 	// está configurado; si ninguno lo está, solo queda el warn y la
 	// reserva se crea igual.

@@ -5,10 +5,13 @@ import { emailError, passwordError, passwordChecks, requiredError } from '../uti
 import { apiErrorMessage, extractFieldErrors } from '../services/api';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
+import VerificarCodigo from './VerificarCodigo';
 
 // Registro real contra POST /api/auth/register (JWT). El rol lo elige
 // el usuario: CLIENTE (por defecto) u ORGANIZADOR (empresa); la política
-// de contraseña se valida en tiempo real bajo el campo.
+// de contraseña se valida en tiempo real bajo el campo. Al crear la
+// cuenta se muestra la pantalla del código de verificación (correo y,
+// si dio teléfono, también SMS); se puede omitir con "Hacerlo después".
 export default function Register() {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +26,7 @@ export default function Register() {
   const [touched, setTouched] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const [verificacion, setVerificacion] = useState(null);
 
   const checks = passwordChecks(password);
   const errors = {
@@ -55,7 +59,9 @@ export default function Register() {
         telefono: telefono.trim() || undefined,
         rol,
       });
-      navigate('/', { replace: true });
+      // La cuenta ya se creó (y la sesión quedó iniciada): ahora toca
+      // el código de verificación que llegó por correo y por SMS.
+      setVerificacion({ email: email.trim(), telefono: telefono.trim() });
     } catch (err) {
       const backendFields = extractFieldErrors(err);
       if (Object.keys(backendFields).length > 0) {
@@ -77,6 +83,15 @@ export default function Register() {
       <div className="absolute left-[-10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-fuchsia-600/20 blur-[120px]" />
       <section className="relative z-10 w-full max-w-[520px] rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+        {verificacion ? (
+          <VerificarCodigo
+            email={verificacion.email}
+            telefono={verificacion.telefono}
+            onVerificado={() => navigate('/', { replace: true })}
+            onOmitir={() => navigate('/', { replace: true })}
+          />
+        ) : (
+          <>
         <div className="mb-8 text-center">
           <img src="/logo.svg" alt="CulturaVibe" className="mx-auto mb-4 h-14 w-14 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.4)]" />
           <h1 className="text-[29px] font-bold tracking-[-.035em] text-white">Crear cuenta</h1>
@@ -193,6 +208,8 @@ export default function Register() {
         <p className="mt-6 text-center text-sm text-slate-400">
           ¿Ya tienes cuenta? <Link to="/login" className="font-semibold text-fuchsia-400 hover:text-fuchsia-300">Inicia sesión</Link>
         </p>
+          </>
+        )}
       </section>
     </main>
   );

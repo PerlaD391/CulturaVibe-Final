@@ -48,6 +48,18 @@ public class EmailService {
 						+ "Saludos,\nEl equipo de CulturaVibe");
 	}
 
+	// Código de verificación de 6 dígitos al registrarse (válido 15 minutos).
+	public void enviarCodigoVerificacion(String email, String nombre, String codigo) {
+		enviar(email,
+				"Tu código de verificación en CulturaVibe",
+				"Hola " + nombre + ",\n\n"
+						+ "Tu código de verificación en CulturaVibe es: " + codigo + "\n\n"
+						+ "Es válido por 15 minutos. Escríbelo en la página para confirmar "
+						+ "tu correo.\n\n"
+						+ "Si no creaste esta cuenta, ignora este correo.\n\n"
+						+ "Saludos,\nEl equipo de CulturaVibe");
+	}
+
 	public void enviarConfirmacionReserva(String email, String nombre, String tituloEvento, int cantidad) {
 		enviar(email,
 				"Tu reserva en CulturaVibe está confirmada",

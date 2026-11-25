@@ -70,3 +70,31 @@ export const resetPassword = async ({ token, nuevaPassword }) => {
   const { data } = await api.post('/api/auth/reset-password', { token, nuevaPassword });
   return data?.mensaje || data?.message || 'Contraseña actualizada. Ya puedes iniciar sesión.';
 };
+
+// Código de verificación de 6 dígitos (registro).
+export const verificarCodigo = async ({ email, codigo }) => {
+  const { data } = await api.post('/api/auth/verificar-codigo', { email, codigo });
+  return data?.mensaje || data?.message || 'Correo verificado correctamente.';
+};
+
+export const reenviarCodigo = async ({ email }) => {
+  const { data } = await api.post('/api/auth/reenviar-codigo', { email });
+  return data?.mensaje || data?.message || 'Te enviamos un código nuevo.';
+};
+
+// Login con Google: el backend redirige a /login?token=<JWT>. El
+// token solo trae el correo, así que el perfil (nombre y rol) se
+// pide a GET /api/auth/me con ese mismo token.
+export const loginConToken = async (token) => {
+  storeAuth({ token, nombre: '', email: '', rol: 'CLIENTE', id: null });
+  const { data } = await api.get('/api/auth/me');
+  const auth = {
+    token,
+    nombre: data.nombre || '',
+    email: data.email || '',
+    rol: data.rol || data.role || 'CLIENTE',
+    id: data.id ?? null,
+  };
+  storeAuth(auth);
+  return auth;
+};

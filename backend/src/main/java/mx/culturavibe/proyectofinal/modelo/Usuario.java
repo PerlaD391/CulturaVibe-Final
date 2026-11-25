@@ -54,6 +54,20 @@ public class Usuario implements UserDetails {
 	@Column(nullable = false)
 	private boolean activo = true;
 
+	// Intentos fallidos de login seguidos. Al llegar a 5 la cuenta se
+	// suspende (activo=false) y se manda el correo de recuperación.
+	// Un login correcto lo pone en 0.
+	@Column(name = "intentos_fallidos", nullable = false)
+	private int intentosFallidos = 0;
+
+	// Verificación de contacto (no es un candado: el login no se
+	// bloquea por no estar verificado).
+	@Column(name = "email_verificado", nullable = false)
+	private boolean emailVerificado = false;
+
+	@Column(name = "telefono_verificado", nullable = false)
+	private boolean telefonoVerificado = false;
+
 	@CreationTimestamp
 	@Column(name = "creado_en")
 	private LocalDateTime creadoEn;
@@ -155,6 +169,30 @@ public class Usuario implements UserDetails {
 
 	public void setActivo(boolean activo) {
 		this.activo = activo;
+	}
+
+	public int getIntentosFallidos() {
+		return intentosFallidos;
+	}
+
+	public void setIntentosFallidos(int intentosFallidos) {
+		this.intentosFallidos = intentosFallidos;
+	}
+
+	public boolean isEmailVerificado() {
+		return emailVerificado;
+	}
+
+	public void setEmailVerificado(boolean emailVerificado) {
+		this.emailVerificado = emailVerificado;
+	}
+
+	public boolean isTelefonoVerificado() {
+		return telefonoVerificado;
+	}
+
+	public void setTelefonoVerificado(boolean telefonoVerificado) {
+		this.telefonoVerificado = telefonoVerificado;
 	}
 
 	public LocalDateTime getCreadoEn() {

@@ -61,6 +61,12 @@ public class DataInitializer {
 			Usuario uValeria = crearCliente(usuarios, passwordEncoder, "Valeria Ortiz Sánchez", "valeria@culturavibe.mx", "0010");
 			Usuario uJorge = crearCliente(usuarios, passwordEncoder, "Jorge Castillo León", "jorge@culturavibe.mx", "0011");
 			Usuario uCamila = crearCliente(usuarios, passwordEncoder, "Camila Duarte Reyes", "camila@culturavibe.mx", "0012");
+			// Las cuentas semilla quedan con el correo verificado (el
+			// registro normal empieza sin verificar hasta meter el código).
+			for (Usuario semilla : usuarios.findAll()) {
+				semilla.setEmailVerificado(true);
+				usuarios.save(semilla);
+			}
 			// uAdmin se guarda para evitar el aviso de variable sin uso.
 			if (uAdmin.getId() == null) {
 				throw new IllegalStateException("No se pudo crear el usuario administrador");

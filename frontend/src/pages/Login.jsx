@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { emailError, requiredError } from '../utils/validation';
-import { apiErrorMessage, extractFieldErrors } from '../services/api';
+import { apiErrorMessage, extractFieldErrors, API_URL } from '../services/api';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 
 // Login real contra POST /api/auth/login (JWT). La sesión queda en
 // localStorage y el rol que devuelve el backend decide a dónde se entra.
+// También acepta el login con Google: el backend redirige aquí con
+// ?token=<JWT> y esta página guarda la sesión con ese token.
 export default function Login() {
-  const { login, loading } = useAuth();
+  const { login, loginConToken, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || null;
@@ -20,6 +22,41 @@ export default function Login() {
   const [touched, setTouched] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const procesadoGoogle = useRef(false);
+
+  // Vuelta del login con Google (?token= o ?error=google). Se procesa
+  // una sola vez al montar; la URL se limpia para que un recargo no
+  // repita el proceso.
+  useEffect(() => {
+    if (procesadoGoogle.current) return;
+    procesadoGoogle.current = true;
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const error = params.get('error');
+    if (!token && error !== 'google') return;
+    navigate(location.pathname, { replace: true });
+    if (error === 'google') {
+      setFormError('No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
+      return;
+    }
+    loginConToken(token)
+      .then(navegarSegunRol)
+      .catch(() => setFormError('No se pudo iniciar sesión con Google. Inténtalo de nuevo.'));
+    // Solo al montar la página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const navegarSegunRol = (auth) => {
+    if (from) {
+      navigate(from, { replace: true });
+    } else if (auth.rol === 'ADMIN') {
+      navigate('/admin', { replace: true });
+    } else if (auth.rol === 'ORGANIZADOR') {
+      navigate('/organizador', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
 
   const errors = {
     email: touched.email ? emailError(email) : '',
@@ -35,15 +72,7 @@ export default function Login() {
     if (nextErrors.email || nextErrors.password) return;
     try {
       const auth = await login({ email: email.trim(), password });
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (auth.rol === 'ADMIN') {
-        navigate('/admin', { replace: true });
-      } else if (auth.rol === 'ORGANIZADOR') {
-        navigate('/organizador', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      navegarSegunRol(auth);
     } catch (err) {
       const backendFields = extractFieldErrors(err);
       if (Object.keys(backendFields).length > 0) {
@@ -108,6 +137,25 @@ export default function Login() {
             {loading ? 'Entrando...' : 'Entrar'} <Icon name="chevronRight" size={18} />
           </button>
         </form>
+
+        <div className="mt-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-white/10" />
+          <span className="text-xs text-slate-500">o continúa con</span>
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <a
+          href={`${API_URL}/oauth2/authorization/google`}
+          className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow transition hover:bg-slate-100"
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.654,32.657,29.223,36,24,36c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+          </svg>
+          Continuar con Google
+        </a>
 
         <p className="mt-4 text-center text-sm text-slate-400">
           <Link to="/recuperar" className="font-semibold text-fuchsia-400 hover:text-fuchsia-300">¿Olvidaste tu contraseña?</Link>

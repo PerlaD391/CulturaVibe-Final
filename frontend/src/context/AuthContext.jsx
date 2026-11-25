@@ -28,6 +28,18 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Sesión que llega con el JWT en la URL (login con Google).
+  const loginConToken = useCallback(async (token) => {
+    setLoading(true);
+    try {
+      const next = await authService.loginConToken(token);
+      setAuth(next);
+      return next;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const register = useCallback(async ({ nombre, email, password, telefono, rol }) => {
     setLoading(true);
     try {
@@ -64,6 +76,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(auth?.token),
     loading,
     login,
+    loginConToken,
     register,
     logout,
     updateProfile,
