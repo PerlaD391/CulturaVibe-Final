@@ -505,7 +505,6 @@ En local, si no tengo Vonage/Twilio o WhatsApp configurados, el sistema guarda l
 El prototipo que entregamos es la versión interactiva en Figma Make: se puede iniciar sesión por rol, navegar el catálogo, ver el detalle de cada evento, reservar y cancelar.
 
 - **Prototipo interactivo (Figma Make):** https://www.figma.com/make/3waxMGvbiyFrp9BJumGEV3/Estilo-Visual-y-Pantallas?p=f&t=qfPXeg4mVMO9VEHx-0
-- **Prototipo de diseño (Figma):** https://www.figma.com/design/IjDLZUJoi0OePaCHmY5JpX — con las 11 pantallas principales de cada rol (catálogo, detalle, artistas, login, registro, recuperar contraseña, panel principal, mis reservas, perfil, panel de organizador y panel de administrador).
 
 ### Paleta de colores
 
