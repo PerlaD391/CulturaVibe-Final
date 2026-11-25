@@ -48,6 +48,16 @@ public class EmailService {
 						+ "Saludos,\nEl equipo de CulturaVibe");
 	}
 
+	public void enviarConfirmacionReserva(String email, String nombre, String tituloEvento, int cantidad) {
+		enviar(email,
+				"Tu reserva en CulturaVibe está confirmada",
+				"Hola " + nombre + ",\n\n"
+						+ "Tu reserva para '" + tituloEvento + "' ("
+						+ cantidad + (cantidad == 1 ? " boleto" : " boletos")
+						+ ") está confirmada. ¡Nos vemos ahí!\n\n"
+						+ "Saludos,\nEl equipo de CulturaVibe");
+	}
+
 	private void enviar(String destinatario, String asunto, String texto) {
 		try {
 			SimpleMailMessage mensaje = new SimpleMailMessage();

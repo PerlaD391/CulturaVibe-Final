@@ -29,17 +29,21 @@ public class ReservaService {
 
 	private final NotificacionService notificaciones;
 
+	private final EmailService correo;
+
 	public ReservaService(ReservaRepository reservas, EventoRepository eventos,
-			UsuarioRepository usuarios, NotificacionService notificaciones) {
+			UsuarioRepository usuarios, NotificacionService notificaciones, EmailService correo) {
 		this.reservas = reservas;
 		this.eventos = eventos;
 		this.usuarios = usuarios;
 		this.notificaciones = notificaciones;
+		this.correo = correo;
 	}
 
 	// Crear reserva: solo se puede reservar un evento a la venta.
-	// Al crearla se envía SMS por Twilio y WhatsApp por Cloud API al
-	// usuario (cada canal solo si está configurado).
+	// Al crearla se envía correo de confirmación al usuario y, si tiene
+	// teléfono, SMS por Vonage/Twilio y WhatsApp por Cloud API (cada
+	// canal solo si está configurado).
 	public ReservaDTO crear(ReservaDTO dto) {
 		Usuario usuario = usuarioActual();
 		Evento evento = eventos.findById(dto.eventoId())
@@ -49,6 +53,8 @@ public class ReservaService {
 		}
 		Reserva reserva = new Reserva(usuario, evento, dto.cantidad());
 		Reserva guardada = reservas.save(reserva);
+		correo.enviarConfirmacionReserva(usuario.getEmail(), usuario.getNombre(),
+				evento.getTitulo(), dto.cantidad());
 		notificaciones.enviarConfirmacionReserva(usuario, evento, dto.cantidad());
 		return ReservaDTO.desde(guardada);
 	}
