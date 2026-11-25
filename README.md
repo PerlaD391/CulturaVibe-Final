@@ -516,7 +516,7 @@ El logo es original del equipo: está arriba de este README y en `frontend/publi
 
 ## Tablero de GitHub Projects
 
-TODO: pegar aquí el link al tablero de GitHub Projects
+[Tablero del proyecto en GitHub Projects](https://github.com/users/PerlaD391/projects/1) (público, con las columnas Backlog, To Do, In Progress, In Review y Done).
 
 ## Notas de seguridad
 
