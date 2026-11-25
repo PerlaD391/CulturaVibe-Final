@@ -1,9 +1,18 @@
 package mx.culturavibe.proyectofinal.dto;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +48,7 @@ public record EventoDTO(
 		String estadoVenta,
 		String url,
 		String imagenUrl,
+		@JsonDeserialize(using = ArtistasDeserializer.class)
 		String artistas,
 		LocalDateTime creadoEn
 ) {
@@ -98,5 +108,24 @@ public record EventoDTO(
 		evento.setUrl(url);
 		evento.setImagenUrl(imagenUrl);
 		evento.setArtistas(artistas);
+	}
+
+	// Los artistas se guardan como texto ("A, B"), pero el frontend y Bruno
+	// los mandan como lista (["A", "B"]). Este deserializador acepta las dos
+	// formas; sin él, una lista daba 500 en vez de crear el evento.
+	public static class ArtistasDeserializer extends JsonDeserializer<String> {
+		@Override
+		public String deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+			JsonNode node = p.getCodec().readTree(p);
+			if (node == null || node.isNull()) {
+				return null;
+			}
+			if (node.isArray()) {
+				List<String> partes = new ArrayList<>();
+				node.forEach(n -> partes.add(n.asText()));
+				return String.join(", ", partes);
+			}
+			return node.asText();
+		}
 	}
 }

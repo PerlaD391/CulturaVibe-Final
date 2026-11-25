@@ -36,9 +36,11 @@ export const eventoToForm = (evento) => ({
   estadoVenta: evento.estadoVenta || 'A_LA_VENTA',
   url: evento.url || '',
   imagenUrl: evento.imagenUrl || '',
-  artistasTexto: Array.isArray(evento.artistas)
-    ? evento.artistas.map((a) => (typeof a === 'string' ? a : a?.nombre)).filter(Boolean).join(', ')
-    : '',
+  artistasTexto: typeof evento.artistas === 'string'
+    ? evento.artistas
+    : Array.isArray(evento.artistas)
+      ? evento.artistas.map((a) => (typeof a === 'string' ? a : a?.nombre)).filter(Boolean).join(', ')
+      : '',
 });
 
 export const formToEvento = (form) => ({

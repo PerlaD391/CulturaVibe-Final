@@ -66,9 +66,9 @@ CulturaVibe-Final/
 | Entorno | URL base |
 | ------- | -------- |
 | Local | http://localhost:8086 |
-| VPS | http://13.140.226.55:8086 |
+| VPS | https://culturavibe.duckdns.org |
 
-> Todavía no tenemos dominio ni HTTPS. Cuando lo tengamos, aquí va a ir la URL con `https://`. Por ahora la demo en vivo usa la IP del VPS con el puerto 8086.
+> La demo en vivo usa `https://culturavibe.duckdns.org` (HTTPS con Let's Encrypt). La API está en `https://culturavibe.duckdns.org/api`.
 
 ## Qué puede hacer la API
 
@@ -397,7 +397,7 @@ El VPS es `13.140.226.55` (Ubuntu, con Java 21). Yo entro por SSH como `root`.
 
    ```bash
    cd frontend
-   echo "VITE_API_URL=http://13.140.226.55:8086" > .env.production
+   echo "VITE_API_URL=https://culturavibe.duckdns.org" > .env.production
    npm run build
    ```
 
@@ -411,15 +411,15 @@ El VPS es `13.140.226.55` (Ubuntu, con Java 21). Yo entro por SSH como `root`.
 
 ### Correo (Postfix)
 
-El VPS ya tiene Postfix instalado y el backend manda los correos a `localhost:25`, sin usuario ni contraseña. Los correos que manda el sistema son: confirmación de registro, recuperación de contraseña y confirmación de reserva. Para que los correos no lleguen a spam, hay que configurar SPF y DKIM en el dominio cuando lo tengamos.
+El VPS ya tiene Postfix instalado y el backend manda los correos a `localhost:25`, sin usuario ni contraseña. Los correos que manda el sistema son: confirmación de registro, recuperación de contraseña y confirmación de reserva. El dominio ya tiene SPF (`v=spf1 ip4:13.140.226.55 -all`) y OpenDKIM firma los correos salientes. El correo llega a la bandeja de entrada del correo institucional; Gmail de consumidor lo bloquea por ser una IP nueva sin reputación.
 
 ### HTTPS (Certbot / Let's Encrypt)
 
-Todavía no tenemos dominio, así que todavía no hay HTTPS. Cuando tengamos el dominio, los pasos son:
+El dominio es `culturavibe.duckdns.org` y ya tiene HTTPS con Let's Encrypt (el certificado vence el 2027-02-23 y se renueva solo). Se instaló con:
 
 ```bash
 sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d tudominio.com
+sudo certbot --nginx -d culturavibe.duckdns.org
 ```
 
 Certbot cambia solo la configuración de Nginx para usar HTTPS y renueva el certificado automáticamente.
@@ -429,7 +429,7 @@ Certbot cambia solo la configuración de Nginx para usar HTTPS y renueva el cert
 La colección está en la carpeta `bruno/` y sirve para probar la API sin escribir código. Yo uso Bruno, no Postman.
 
 1. Abro Bruno y abro la colección desde la carpeta `bruno/`.
-2. Arriba a la derecha elijo el entorno: **Local** (http://localhost:8086) o **VPS** (http://13.140.226.55:8086).
+2. Arriba a la derecha elijo el entorno: **Local** (http://localhost:8086) o **VPS** (https://culturavibe.duckdns.org).
 3. Empiezo por la carpeta **Auth**:
    - **Login**: entra con la cuenta de admin y guarda el token solo en la variable `{{token}}`.
    - **Login cliente**: entra con la cuenta de cliente y guarda el token en `{{tokenCliente}}`. Esta petición hay que correrla antes de probar el caso de rol incorrecto y las reservas.
