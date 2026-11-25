@@ -93,7 +93,7 @@ export default function Register() {
             />
           </FormField>
 
-          <FormField label="Correo electrónico" error={errors.email || fieldErrors.email}>
+          <FormField label="Correo electrónico" error={errors.email || fieldErrors.email} hint="Puedes usar Gmail, Outlook o cualquier correo válido.">
             <input
               type="email"
               placeholder="tu@correo.com"
