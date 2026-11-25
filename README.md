@@ -8,7 +8,7 @@ Hola, yo soy **Perla Danae Gallardo Vasquez (GVPD)** y este es mi proyecto final
 
 En México hay muchos eventos culturales — conciertos, obras de teatro, danza, arte y festivales — pero la información está regada en muchas páginas y no siempre es fácil saber qué hay cerca, cuánto cuesta o si todavía hay boletos. CulturaVibe junta todo en un solo lugar: yo puedo ver los eventos, buscar por categoría o por fecha, y apartar mi lugar con una reserva. Los organizadores pueden publicar sus eventos y los administradores llevan el control de todo el sistema.
 
-Antes el proyecto solo mostraba eventos de Ticketmaster. Ahora ya es una aplicación completa (full stack): tiene su propio backend, su propia base de datos, cuentas de usuario con roles, reservas y avisos por correo, SMS y WhatsApp.
+El catálogo mezcla los 12 eventos propios con los eventos de Ticketmaster importados a la base de datos (en vivo son 2.061 eventos). Es una aplicación completa (full stack): tiene su propio backend, su propia base de datos, cuentas de usuario con roles, reservas y avisos por correo, SMS y WhatsApp.
 
 ## Tecnologías que usé
 
@@ -40,8 +40,10 @@ Antes el proyecto solo mostraba eventos de Ticketmaster. Ahora ya es una aplicac
 CulturaVibe-Final/
 ├── README.md
 ├── .gitignore
+├── culturavibe-final.service  # Servicio systemd del VPS
+├── culturavibe-nginx.conf   # Configuración de Nginx + HTTPS
 ├── backend/                 # Spring Boot (puerto 8086)
-│   ├── src/main/java/mx/culturavibe/final/
+│   ├── src/main/java/mx/culturavibe/proyectofinal/
 │   └── src/main/resources/
 │       ├── application.properties
 │       └── db/migration/    # Migraciones Flyway
@@ -56,6 +58,7 @@ CulturaVibe-Final/
 │   ├── Auth/
 │   ├── Eventos/
 │   ├── Reservas/
+│   ├── Admin/
 │   └── environments/
 └── db/
     └── respaldo.sql         # Respaldo de la base de datos
@@ -90,7 +93,7 @@ Eventos:
 | GET | `/api/eventos/{id}` | Ver un evento | Público |
 | POST | `/api/eventos` | Crear un evento | ADMIN y ORGANIZADOR |
 | PUT | `/api/eventos/{id}` | Editar un evento | ADMIN y ORGANIZADOR |
-| DELETE | `/api/eventos/{id}` | Borrar un evento | ADMIN |
+| DELETE | `/api/eventos/{id}` | Borrar un evento | ADMIN y ORGANIZADOR (solo sus propios eventos) |
 
 Categorías:
 
@@ -105,10 +108,17 @@ Reservas:
 
 | Método | Ruta | Para qué sirve | Quién puede |
 | ------ | ---- | -------------- | ----------- |
-| POST | `/api/reservas` | Crear una reserva | CLIENTE |
+| POST | `/api/reservas` | Crear una reserva | Con sesión |
 | GET | `/api/reservas/mis` | Ver mis reservas | CLIENTE |
 | GET | `/api/reservas` | Ver todas las reservas | ADMIN y ORGANIZADOR |
 | DELETE | `/api/reservas/{id}` | Cancelar una reserva | Dueño de la reserva o ADMIN |
+
+Administración (solo ADMIN, con el token de admin):
+
+| Método | Ruta | Para qué sirve | Quién puede |
+| ------ | ---- | -------------- | ----------- |
+| POST | `/api/admin/ticketmaster/sync` | Sincronizar los eventos de Ticketmaster a la base (responde 503 si no hay llave) | ADMIN |
+| POST | `/api/admin/usuarios/importar-dummyjson?limit=208` | Importar usuarios de DummyJSON (responde 503 si DummyJSON no responde) | ADMIN |
 
 Usuarios:
 
@@ -137,6 +147,8 @@ Hay 3 roles en el sistema:
 | **ORGANIZADOR** | Crear y editar sus eventos y ver las reservas de sus eventos. |
 | **CLIENTE** | Ver eventos y hacer o cancelar sus reservas. |
 
+**Registro de empresas:** el formulario de registro tiene "Tipo de cuenta": Cliente o Empresa organizadora. El registro acepta `rol` opcional (`CLIENTE` por defecto, `ORGANIZADOR` para empresas) y el backend rechaza `ADMIN` con 400.
+
 ## Cuentas de prueba
 
 Estas cuentas vienen en los datos de prueba (seed). Son solo para probar, no son cuentas reales:
@@ -158,6 +170,8 @@ Datos de prueba (seed):
 - 5 categorías: Música, Teatro, Danza, Arte y Festivales
 - 12 eventos
 - 12 reservas
+
+En vivo el catálogo tiene **2.061 eventos** tras la sincronización de Ticketmaster (12 de semilla + ~2.049 importados), y la importación de DummyJSON agrega hasta 208 usuarios.
 
 ### Diagrama ER
 
@@ -227,6 +241,8 @@ erDiagram
         varchar url
         varchar imagen_url
         text artistas
+        varchar fuente
+        varchar external_id
         datetime creado_en
     }
     reservas {
@@ -274,6 +290,7 @@ La relación de muchos a muchos entre usuarios y eventos se hace con la tabla **
    WHATSAPP_PHONE_NUMBER_ID=tu_phone_number_id
    WHATSAPP_ACCESS_TOKEN=tu_token_temporal_de_meta
    WHATSAPP_TEMPLATE_NAME=hello_world
+   TICKETMASTER_API_KEY=tu_llave_de_ticketmaster
    ```
 
    El correo en local usa Postfix en `localhost:25`, así que no necesita usuario ni contraseña.
@@ -447,6 +464,9 @@ La colección está en la carpeta `bruno/` y sirve para probar la API sin escrib
    - **Crear reserva**: reserva 2 lugares del evento 1 (201) y guarda el id en `{{reservaId}}`.
    - **Listar mis reservas**: trae solo mis reservas (200).
    - **Cancelar reserva**: cancela la reserva que se acaba de crear (200).
+6. La carpeta **Admin** (usa el token de admin del **Login**):
+   - **Sincronizar Ticketmaster**: importa los eventos de Ticketmaster a la base (200). Tarda más de un minuto: en Bruno se puede ver un timeout, pero la importación termina en segundo plano.
+   - **Importar usuarios DummyJSON**: importa hasta 208 usuarios con `?limit=208` (200).
 
 Cada petición ya trae su método, su URL con `{{baseUrl}}` y `{{token}}`, sus encabezados y un cuerpo JSON de ejemplo. Las peticiones de error ya traen su prueba que revisa el código de respuesta.
 

@@ -1,0 +1,25 @@
+meta {
+  name: Sincronizar Ticketmaster
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/admin/ticketmaster/sync
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Sincronizar Ticketmaster devuelve 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("La respuesta trae el conteo de importados", function () {
+    expect(res.body.importados).to.be.a("number");
+  });
+}

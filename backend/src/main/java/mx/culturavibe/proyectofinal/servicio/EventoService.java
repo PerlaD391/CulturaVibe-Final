@@ -57,6 +57,12 @@ public class EventoService {
 		return EventoDTO.desde(buscarEntidad(id));
 	}
 
+	// Mis eventos (ORGANIZADOR): solo los del usuario en sesión.
+	@Transactional(readOnly = true)
+	public Page<EventoDTO> misEventos(Pageable pageable) {
+		return eventos.findByOrganizadorId(usuarioActual().getId(), pageable).map(EventoDTO::desde);
+	}
+
 	@Transactional(readOnly = true)
 	public Evento buscarEntidad(Long id) {
 		return eventos.findById(id)

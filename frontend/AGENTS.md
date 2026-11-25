@@ -9,9 +9,10 @@ Router 7 + Axios. Modo oscuro. Archivos `.jsx`
 
 - Catálogo de eventos del **backend propio** (Spring Boot + MySQL,
   puerto 8086): GET /api/eventos con paginación del servidor, filtros
-  por categoría, búsqueda (q) y fecha. Ya NO usa Ticketmaster como
-  fuente. Si un evento trae `url`, se mantiene el enlace "Comprar
-  boletos".
+  por categoría, búsqueda (q) y fecha. Los eventos de Ticketmaster
+  llegan al catálogo por sincronización al backend (el catálogo
+  siempre se lee del backend, nunca directo de Ticketmaster). Si un
+  evento trae `url`, se mantiene el enlace "Comprar boletos".
 - Autenticación real con **JWT** contra /api/auth/** (login, registro,
   logout, forgot/reset password). Roles ADMIN, ORGANIZADOR y CLIENTE,
   con rutas protegidas por rol (/admin, /organizador). El token se
@@ -40,13 +41,13 @@ Router 7 + Axios. Modo oscuro. Archivos `.jsx`
 ## Variables de entorno (`.env`, nunca en el repo)
 
 - `VITE_API_URL` — URL base de la API (por defecto
-  http://localhost:8086; en el VPS es http://13.140.226.55:8086).
+  http://localhost:8086; en el VPS es https://culturavibe.duckdns.org).
 
 ## Despliegue (VPS Contabo, Ubuntu)
 
 Se compila en local y se sube el `dist` con
-`scp -r .\dist\* root@13.140.226.55:/var/www/html/`.
-La app se sirve en la raíz `http://13.140.226.55/` (el `base` de
+`scp -r .\dist\* root@13.140.226.55:/var/www/html/culturavibe/`.
+La app se sirve en la raíz `https://culturavibe.duckdns.org/` (el `base` de
 `vite.config.js` es `/`).
 
 ## Estructura

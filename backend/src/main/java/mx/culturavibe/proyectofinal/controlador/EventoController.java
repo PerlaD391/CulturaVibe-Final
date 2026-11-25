@@ -43,6 +43,12 @@ public class EventoController {
 		return eventos.listar(categoria, q, fecha, pageable);
 	}
 
+	@GetMapping("/mis")
+	@PreAuthorize("hasRole('ORGANIZADOR')")
+	public Page<EventoDTO> misEventos(@PageableDefault(size = 12, sort = "fecha") Pageable pageable) {
+		return eventos.misEventos(pageable);
+	}
+
 	@GetMapping("/{id}")
 	public EventoDTO buscarPorId(@PathVariable Long id) {
 		return eventos.buscarPorId(id);

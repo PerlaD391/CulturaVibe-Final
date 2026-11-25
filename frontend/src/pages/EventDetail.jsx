@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchEventoById, estadoVentaLabel } from '../services/eventos';
+import { fetchEventoById, estadoVentaLabel, estaALaVenta } from '../services/eventos';
 import { createReserva } from '../services/reservas';
 import { apiErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -105,7 +105,7 @@ export default function EventDetail() {
     : typeof event.artistas === 'string'
       ? event.artistas.split(',').map((a) => a.trim()).filter(Boolean)
       : [];
-  const aLaVenta = !event.estadoVenta || event.estadoVenta === 'A_LA_VENTA';
+  const aLaVenta = estaALaVenta(event.estadoVenta);
 
   const shareText = `${event.titulo} — ${date} a las ${time}${placeLine ? ` en ${placeLine}` : ''}. ${window.location.href}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;

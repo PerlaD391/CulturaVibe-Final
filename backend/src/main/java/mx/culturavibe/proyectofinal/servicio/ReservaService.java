@@ -48,7 +48,7 @@ public class ReservaService {
 		Usuario usuario = usuarioActual();
 		Evento evento = eventos.findById(dto.eventoId())
 				.orElseThrow(() -> new NoSuchElementException("No existe un evento con id " + dto.eventoId()));
-		if (evento.getEstadoVenta() != null && !"onsale".equalsIgnoreCase(evento.getEstadoVenta())) {
+		if (!aLaVenta(evento.getEstadoVenta())) {
 			throw new IllegalStateException("La venta de boletos para este evento ya está cerrada");
 		}
 		Reserva reserva = new Reserva(usuario, evento, dto.cantidad());
@@ -108,5 +108,17 @@ public class ReservaService {
 		String email = SecurityContextHolder.getContext().getAuthentication().getName();
 		return usuarios.findByEmailIgnoreCase(email)
 				.orElseThrow(() -> new NoSuchElementException("No existe el usuario autenticado"));
+	}
+
+	// El estado de venta se guarda con tres vocabularios ("onsale" de la
+	// semilla, "En venta" de Ticketmaster, "A_LA_VENTA" del formulario):
+	// los tres significan que sí hay boletos. Sin valor, también se
+	// puede reservar (así lo hacía el código anterior).
+	private boolean aLaVenta(String estadoVenta) {
+		if (estadoVenta == null) {
+			return true;
+		}
+		String valor = estadoVenta.trim().toLowerCase();
+		return valor.equals("onsale") || valor.equals("en venta") || valor.equals("a_la_venta");
 	}
 }

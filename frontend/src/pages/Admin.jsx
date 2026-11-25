@@ -29,9 +29,12 @@ export default function Admin() {
   const [tab, setTab] = useState('eventos');
 
   const [eventos, setEventos] = useState([]);
+  const [totalEventos, setTotalEventos] = useState(0);
   const [categorias, setCategorias] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
   const [reservas, setReservas] = useState([]);
+  const [totalReservas, setTotalReservas] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -57,6 +60,7 @@ export default function Admin() {
   const loadEventos = useCallback(async () => {
     const data = await fetchEventos({ page: 0, size: 100 });
     setEventos(data.eventos);
+    setTotalEventos(data.total);
   }, []);
   const loadCategorias = useCallback(async () => {
     setCategorias(await fetchCategorias());
@@ -64,10 +68,12 @@ export default function Admin() {
   const loadUsuarios = useCallback(async () => {
     const data = await fetchUsuarios({ page: 0, size: 100 });
     setUsuarios(data.usuarios);
+    setTotalUsuarios(data.total);
   }, []);
   const loadReservas = useCallback(async () => {
     const data = await fetchReservas({ page: 0, size: 100 });
     setReservas(data.reservas);
+    setTotalReservas(data.total);
   }, []);
 
   const loadAll = useCallback(async () => {
@@ -227,7 +233,7 @@ export default function Admin() {
       {tab === 'eventos' && (
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-slate-400">{eventos.length} eventos</p>
+            <p className="text-sm text-slate-400">{totalEventos} eventos</p>
             <button
               onClick={() => {
                 setEventoEditing(null);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchEventos, createEvento, updateEvento, deleteEvento, estadoVentaLabel } from '../services/eventos';
+import { fetchMisEventos, createEvento, updateEvento, deleteEvento, estadoVentaLabel } from '../services/eventos';
 import { fetchReservas, estadoReservaLabel } from '../services/reservas';
 import { apiErrorMessage, extractFieldErrors } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -33,17 +33,12 @@ export default function Organizador() {
     setError('');
     try {
       const [eventosData, reservasData] = await Promise.all([
-        fetchEventos({ page: 0, size: 100 }),
+        fetchMisEventos({ page: 0, size: 100 }),
         fetchReservas({ page: 0, size: 100 }),
       ]);
-      // Solo los eventos del organizador en sesión (cuando el backend
-      // trae organizadorId); si no trae el campo, se muestran todos los
-      // que el backend le devolvió.
-      const mios = user?.id
-        ? eventosData.eventos.filter((ev) => !ev.organizadorId || ev.organizadorId === user.id)
-        : eventosData.eventos;
-      setEventos(mios);
-      const misIds = new Set(mios.map((ev) => ev.id));
+      // El backend ya trae solo los eventos del organizador en sesión.
+      setEventos(eventosData.eventos);
+      const misIds = new Set(eventosData.eventos.map((ev) => ev.id));
       setReservas(reservasData.reservas.filter((r) => misIds.has(r.eventoId)));
     } catch (err) {
       setError(apiErrorMessage(err, 'No se pudieron cargar tus eventos.'));

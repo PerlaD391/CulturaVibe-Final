@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import Icon from './Icon';
 import { formatFechaCorta, formatPrecio } from '../utils/format';
-import { estadoVentaLabel } from '../services/eventos';
+import { estadoVentaLabel, estaALaVenta } from '../services/eventos';
 
 // Tarjeta del catálogo. El evento ya viene del backend con el DTO del
 // Proyecto Final: {id, titulo, descripcion, fecha, hora, direccion,
@@ -18,7 +18,7 @@ export default function EventCard({ event }) {
   const place = [event.direccion, event.ciudad, event.estado].filter(Boolean).join(', ') || 'Lugar por confirmar';
   const category = event.categoriaNombre || 'Cultura';
   const price = formatPrecio(event.precio);
-  const aLaVenta = !event.estadoVenta || event.estadoVenta === 'A_LA_VENTA';
+  const aLaVenta = estaALaVenta(event.estadoVenta);
 
   return (
     <div

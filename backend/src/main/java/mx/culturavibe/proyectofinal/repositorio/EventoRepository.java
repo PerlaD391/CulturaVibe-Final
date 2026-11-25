@@ -36,6 +36,9 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
 					+ "OR LOWER(e.descripcion) LIKE LOWER(CONCAT('%', :q, '%'))")
 	Page<Evento> buscarPorTexto(@Param("q") String q, Pageable pageable);
 
+	@EntityGraph(attributePaths = { "categoria", "organizador" })
+	Page<Evento> findByOrganizadorId(Long organizadorId, Pageable pageable);
+
 	// Para la sincronización con Ticketmaster: un evento importado ya
 	// existe si hay otro con el mismo id de Ticketmaster (external_id).
 	boolean existsByExternalId(String externalId);
