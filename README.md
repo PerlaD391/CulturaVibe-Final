@@ -498,11 +498,26 @@ WHATSAPP_TEMPLATE_NAME=hello_world
 
 En local, si no tengo Vonage/Twilio o WhatsApp configurados, el sistema guarda la notificación como pendiente y no se cae por eso.
 
-## Tablero y prototipo
+## Diseño en Figma
+
+### Prototipo navegable (interactivo)
+
+El prototipo que entregamos es la versión interactiva en Figma Make: se puede iniciar sesión por rol, navegar el catálogo, ver el detalle de cada evento, reservar y cancelar.
+
+- **Prototipo interactivo (Figma Make):** https://www.figma.com/make/3waxMGvbiyFrp9BJumGEV3/Estilo-Visual-y-Pantallas?p=f&t=qfPXeg4mVMO9VEHx-0
+- **Prototipo de diseño (Figma):** https://www.figma.com/design/IjDLZUJoi0OePaCHmY5JpX — con las 11 pantallas principales de cada rol (catálogo, detalle, artistas, login, registro, recuperar contraseña, panel principal, mis reservas, perfil, panel de organizador y panel de administrador).
+
+### Paleta de colores
+
+Nuestra paleta es negro (#050505) como base, violeta (#8B5CF6) como color principal y fucsia (#D946EF) como acento, con texto claro (#F8FAFC). Es una paleta análoga: violeta y fucsia son colores vecinos en el círculo cromático, por eso armonizan sin chocar. El negro da contraste y hace resaltar los acentos, además de dar elegancia y reducir la fatiga visual. El violeta se asocia con la creatividad y la cultura, y el fucsia aporta energía y juventud, justo lo que representa CulturaVibe. El texto claro sobre fondo oscuro garantiza un contraste alto y buena legibilidad. La aplicación usa exactamente esta misma paleta, por eso el diseño se ve igual en el prototipo y en la app.
+
+### Logo
+
+El logo es original del equipo: está arriba de este README y en `frontend/public/logo.svg`, con el mismo degradado de violeta a fucsia de la paleta.
+
+## Tablero de GitHub Projects
 
 TODO: pegar aquí el link al tablero de GitHub Projects
-
-TODO: pegar aquí el link al prototipo de Figma
 
 ## Notas de seguridad
 
