@@ -32,6 +32,15 @@
 # +1 737 221 2163 y cada número que deba recibir mensajes tiene que
 # unirse antes mandando "join twilio-trial" por WhatsApp a ese número.
 # TWILIO_WHATSAPP_FROM=whatsapp:+17372212163
+# Plantillas de contenido de Twilio para el código de verificación
+# (la cuenta es de prueba y solo permite plantillas; el texto libre
+# da "Invalid template name" en SMS y 21654 "ContentSid Required" en
+# WhatsApp). El ContentSid se copia de la consola de Twilio
+# (Content Template Builder); la plantilla debe tener una variable
+# {{1}} para el código de 6 dígitos. Si están vacías, el código se
+# manda como texto libre.
+# TWILIO_SMS_CONTENT_SID=
+# TWILIO_WHATSAPP_CONTENT_SID=
 
 # --- WhatsApp con Meta WhatsApp Cloud API (gratis; si están vacías, se omite el WhatsApp) ---
 # El token es temporal (dura 24 h): se genera en developers.facebook.com y

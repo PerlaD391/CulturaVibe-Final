@@ -22,7 +22,12 @@ import mx.culturavibe.proyectofinal.repositorio.NotificacionRepository;
 // TWILIO_AUTH_TOKEN y TWILIO_PHONE_NUMBER; WhatsApp necesita
 // WHATSAPP_PHONE_NUMBER_ID y WHATSAPP_ACCESS_TOKEN (Meta) o
 // TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN (sandbox). Twilio trial no
-// deja comprar número sin upgrade, por eso Vonage va primero. Si un
+// deja comprar número sin upgrade, por eso Vonage va primero. La
+// cuenta de Twilio es de prueba y solo permite plantillas de
+// contenido: el código de verificación se manda con la plantilla
+// TWILIO_SMS_CONTENT_SID (SMS) y TWILIO_WHATSAPP_CONTENT_SID
+// (WhatsApp), cada una con una variable {{1}} para el código; si no
+// hay ContentSid, se manda texto libre como respaldo. Si un
 // canal no está configurado, se registra un warn y se sigue; la reserva
 // se crea igual. Cada intento (enviado o fallido) queda guardado en
 // notificaciones.
@@ -47,6 +52,13 @@ public class NotificacionService {
 
 	@Value("${app.twilio.phone-number:}")
 	private String numeroTwilio;
+
+	// Plantilla de contenido para el SMS con el código de
+	// verificación. La cuenta de Twilio es de prueba y solo permite
+	// plantillas para SMS (el texto libre da "Invalid template
+	// name"). Si está vacío, el código se manda como texto libre.
+	@Value("${app.twilio.sms-content-sid:}")
+	private String smsContentSid;
 
 	private boolean inicializado = false;
 
@@ -89,7 +101,7 @@ public class NotificacionService {
 		String texto = "CulturaVibe: tu código de verificación es " + codigo + ". Válido por 15 minutos.";
 		boolean enviado = false;
 		if (vonage.configurado() || twilioConfigurado()) {
-			enviarSms(usuario, telefono, texto);
+			enviarSms(usuario, telefono, texto, codigo);
 			enviado = true;
 		} else {
 			log.warn("Ni Vonage ni Twilio están configurados; el código de verificación de {} no va por SMS",
@@ -111,8 +123,15 @@ public class NotificacionService {
 
 	// El SMS sale por Vonage si está configurado; si no, por Twilio si
 	// está configurado; si ninguno lo está, solo queda el warn y la
-	// reserva se crea igual.
+	// reserva se crea igual. El código (null para la confirmación de
+	// reserva) es el código de 6 dígitos: si viene y hay plantilla de
+	// contenido configurada, el SMS por Twilio se manda con la
+	// plantilla en vez de texto libre.
 	private void enviarSms(Usuario usuario, String telefono, String texto) {
+		enviarSms(usuario, telefono, texto, null);
+	}
+
+	private void enviarSms(Usuario usuario, String telefono, String texto, String codigo) {
 		if (vonage.configurado()) {
 			if (vonage.enviarSms(telefono, texto)) {
 				guardar(usuario, "SMS", texto, "ENVIADA");
@@ -128,9 +147,22 @@ public class NotificacionService {
 		}
 		inicializar();
 		try {
-			Message.creator(new PhoneNumber(telefono), new PhoneNumber(numeroTwilio), texto).create();
+			if (codigo != null && smsContentSid != null && !smsContentSid.isBlank()) {
+				// Plantilla de contenido: la cuenta de prueba solo
+				// permite plantillas para SMS (el texto libre da
+				// "Invalid template name"). La plantilla lleva una
+				// variable {{1}} con el código. El Body se ignora
+				// cuando hay ContentSid.
+				Message.creator(new PhoneNumber(telefono), new PhoneNumber(numeroTwilio), texto)
+						.setContentSid(smsContentSid)
+						.setContentVariables("{\"1\":\"" + codigo + "\"}")
+						.create();
+				log.info("SMS enviado por Twilio a {} (plantilla {})", telefono, smsContentSid);
+			} else {
+				Message.creator(new PhoneNumber(telefono), new PhoneNumber(numeroTwilio), texto).create();
+				log.info("SMS enviado por Twilio a {}", telefono);
+			}
 			guardar(usuario, "SMS", texto, "ENVIADA");
-			log.info("SMS enviado por Twilio a {}", telefono);
 		} catch (Throwable e) {
 			// Throwable y no Exception: el SDK de Twilio usa Apache
 			// HttpClient 5 y si falta su dependencia httpcore5-h2 lanza
@@ -177,7 +209,7 @@ public class NotificacionService {
 			return true;
 		}
 		if (twilioWhatsapp.configurado()) {
-			if (twilioWhatsapp.enviarMensaje(telefono, texto)) {
+			if (twilioWhatsapp.enviarCodigoVerificacion(telefono, codigo)) {
 				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
 			} else {
 				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
