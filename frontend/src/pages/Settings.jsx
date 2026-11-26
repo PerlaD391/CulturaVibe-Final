@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { updateUsuario } from '../services/usuarios';
+import { eliminarMiCuenta } from '../services/auth';
 import { apiErrorMessage } from '../services/api';
 import { roleLabel } from '../services/auth';
 import { iniciales } from '../utils/format';
 import { requiredError } from '../utils/validation';
+import { LADA_OTRA, LADA_POR_DEFECTO, separarLada, unirLada } from '../utils/telefono';
+import SelectorLada from '../components/SelectorLada';
+import ConfirmModal from '../components/ConfirmModal';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 
@@ -32,20 +36,29 @@ const loadPrefs = () => {
 };
 
 export default function Settings() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, clearLocal } = useAuth();
+  const navigate = useNavigate();
   const [preferences, setPreferences] = useState(loadPrefs());
   const [savedPrefs, setSavedPrefs] = useState(false);
 
   const [editName, setEditName] = useState(user?.nombre || '');
-  const [editPhone, setEditPhone] = useState(user?.telefono || '');
+  const [editPhone, setEditPhone] = useState('');
+  const [lada, setLada] = useState(LADA_POR_DEFECTO);
+  const [codigoOtro, setCodigoOtro] = useState('');
   const [touchedName, setTouchedName] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
   const [profileError, setProfileError] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [mostrarEliminar, setMostrarEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState('');
 
   useEffect(() => {
     setEditName(user?.nombre || '');
-    setEditPhone(user?.telefono || '');
+    const partes = separarLada(user?.telefono || '');
+    setEditPhone(partes.numero);
+    setLada(partes.lada);
+    setCodigoOtro(partes.codigoOtro || '');
   }, [user?.nombre, user?.telefono]);
 
   const nameError = touchedName ? requiredError(editName, 'El nombre') : '';
@@ -61,21 +74,41 @@ export default function Settings() {
     setProfileMsg('');
     setTouchedName(true);
     if (requiredError(editName, 'El nombre')) return;
+    // El teléfono se guarda con la lada elegida (E.164).
+    const telefonoE164 = unirLada(lada === LADA_OTRA ? codigoOtro : lada, editPhone);
     if (!user?.id) {
       // El token no trae el id: se actualiza solo la vista local.
-      updateProfile({ nombre: editName.trim(), telefono: editPhone.trim() });
+      updateProfile({ nombre: editName.trim(), telefono: telefonoE164 });
       setProfileMsg('Nombre actualizado en este navegador. (El servidor no devolvió el id para guardarlo en tu perfil.)');
       return;
     }
     setSavingProfile(true);
     try {
-      await updateUsuario(user.id, { nombre: editName.trim(), telefono: editPhone.trim() });
-      updateProfile({ nombre: editName.trim(), telefono: editPhone.trim() });
+      await updateUsuario(user.id, { nombre: editName.trim(), telefono: telefonoE164 });
+      updateProfile({ nombre: editName.trim(), telefono: telefonoE164 });
       setProfileMsg('Perfil actualizado.');
     } catch (err) {
       setProfileError(apiErrorMessage(err, 'No se pudo guardar el perfil.'));
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // Eliminar la propia cuenta: es irreversible, borra las reservas
+  // y los datos. El token ya queda revocado en el servidor, así que
+  // aquí solo se limpia la sesión local y se vuelve al catálogo.
+  const handleEliminarCuenta = async () => {
+    setErrorEliminar('');
+    setEliminando(true);
+    try {
+      await eliminarMiCuenta();
+      clearLocal();
+      navigate('/', { replace: true, state: { mensaje: 'Tu cuenta se eliminó correctamente.' } });
+    } catch (err) {
+      setErrorEliminar(apiErrorMessage(err, 'No se pudo eliminar tu cuenta.'));
+      setMostrarEliminar(false);
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -109,14 +142,17 @@ export default function Settings() {
                 className={inputClass(Boolean(nameError))}
               />
             </FormField>
-            <FormField label="Teléfono (para avisos por SMS)">
-              <input
-                type="tel"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                placeholder="Ej. 55 1234 5678"
-                className={inputClass(false)}
-              />
+            <FormField label="Teléfono (para avisos por SMS)" hint="Elige la lada de tu país: el código de verificación llega por SMS o WhatsApp a ese número.">
+              <span className="flex gap-2">
+                <SelectorLada lada={lada} codigoOtro={codigoOtro} onLadaChange={setLada} onCodigoOtroChange={setCodigoOtro} />
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Ej. 55 1234 5678"
+                  className={inputClass(false)}
+                />
+              </span>
             </FormField>
             <div className="border-b border-white/5 pb-2">
               <p className="text-xs uppercase text-slate-500">Correo Electrónico</p>
@@ -234,7 +270,40 @@ export default function Settings() {
             {savedPrefs && <p className="text-center text-sm font-medium text-emerald-400">Preferencias guardadas.</p>}
           </div>
         </section>
+
+        <section className="rounded-3xl border border-red-500/30 bg-red-500/5 p-8 backdrop-blur-md lg:col-span-2">
+          <div className="mb-6 flex items-center gap-3">
+            <Icon name="trash" size={28} className="text-red-400" />
+            <div>
+              <h3 className="text-xl font-bold text-white">Eliminar mi cuenta</h3>
+              <p className="text-sm text-slate-400">Esta acción es irreversible.</p>
+            </div>
+          </div>
+          <p className="text-sm leading-relaxed text-slate-400">
+            Al eliminar tu cuenta se borran tu perfil, tus reservas y tus datos de forma permanente. Si eres el único
+            administrador, no podrás eliminar tu cuenta hasta que haya otro administrador.
+          </p>
+          {errorEliminar && <p className="mt-4 text-sm font-medium text-red-400">{errorEliminar}</p>}
+          <button
+            onClick={() => setMostrarEliminar(true)}
+            className="mt-6 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-500"
+          >
+            Eliminar mi cuenta
+          </button>
+        </section>
       </div>
+
+      <ConfirmModal
+        open={mostrarEliminar}
+        titulo="¿Eliminar tu cuenta?"
+        mensaje="Se eliminará tu cuenta con tus reservas y tus datos, y no se podrá recuperar. ¿Seguro que quieres continuar?"
+        textoConfirmar="Sí, eliminar mi cuenta"
+        textoCancelar="Cancelar"
+        peligro
+        loading={eliminando}
+        onConfirm={handleEliminarCuenta}
+        onCancel={() => setMostrarEliminar(false)}
+      />
     </div>
   );
 }

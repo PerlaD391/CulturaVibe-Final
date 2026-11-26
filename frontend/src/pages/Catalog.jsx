@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { fetchEventos } from '../services/eventos';
 import { fetchCategorias } from '../services/categorias';
 import { apiErrorMessage } from '../services/api';
@@ -16,7 +16,11 @@ const readStoredLimit = () => {
 };
 
 export default function Catalog() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  // Aviso de una sola vez (por ejemplo, tras eliminar la cuenta):
+  // llega por navigate(..., { state: { mensaje } }).
+  const [aviso, setAviso] = useState(location.state?.mensaje || '');
   const [eventos, setEventos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [total, setTotal] = useState(0);
@@ -105,6 +109,14 @@ export default function Catalog() {
 
   return (
     <div className="mx-auto max-w-[1440px]">
+      {aviso && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-300">
+          <span>{aviso}</span>
+          <button type="button" onClick={() => setAviso('')} aria-label="Cerrar aviso" className="text-emerald-300 hover:text-white">
+            ✕
+          </button>
+        </div>
+      )}
       {/* Filtros: se envían a la API (categoría, búsqueda q, fecha) */}
       <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-3">

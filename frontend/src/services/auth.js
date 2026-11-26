@@ -64,6 +64,13 @@ export const logout = async () => {
   clearStoredAuth();
 };
 
+// El usuario elimina su propia cuenta (DELETE /api/usuarios/me).
+// Borra la cuenta con sus reservas y datos; el token queda revocado
+// en el servidor y la sesión se cierra en el cliente.
+export const eliminarMiCuenta = async () => {
+  await api.delete('/api/usuarios/me');
+};
+
 export const forgotPassword = async (email) => {
   const { data } = await api.post('/api/auth/forgot-password', { email });
   return data?.mensaje || data?.message || 'Si ese correo existe, recibirás las instrucciones para recuperar tu contraseña.';

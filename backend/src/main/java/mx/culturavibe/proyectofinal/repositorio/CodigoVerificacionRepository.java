@@ -13,4 +13,8 @@ public interface CodigoVerificacionRepository extends JpaRepository<CodigoVerifi
 	List<CodigoVerificacion> findByUsuarioAndUsadoFalse(Usuario usuario);
 
 	Optional<CodigoVerificacion> findFirstByUsuarioAndUsadoFalseOrderByExpiracionDesc(Usuario usuario);
+
+	// Para borrar la cuenta de un usuario: sus códigos de
+	// verificación se borran antes que el usuario.
+	void deleteByUsuarioId(Long usuarioId);
 }

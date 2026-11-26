@@ -1,6 +1,7 @@
 package mx.culturavibe.proyectofinal.repositorio;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,10 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
 
 	@EntityGraph(attributePaths = { "categoria", "organizador" })
 	Page<Evento> findByOrganizadorId(Long organizadorId, Pageable pageable);
+
+	// Para borrar la cuenta de un organizador: sus eventos sin
+	// paginar, para borrar antes las reservas que tengan.
+	List<Evento> findByOrganizadorId(Long organizadorId);
 
 	// Para la sincronización con Ticketmaster: un evento importado ya
 	// existe si hay otro con el mismo id de Ticketmaster (external_id).

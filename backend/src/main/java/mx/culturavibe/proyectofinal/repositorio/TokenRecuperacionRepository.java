@@ -9,4 +9,8 @@ import mx.culturavibe.proyectofinal.modelo.TokenRecuperacion;
 public interface TokenRecuperacionRepository extends JpaRepository<TokenRecuperacion, Long> {
 
 	Optional<TokenRecuperacion> findByToken(String token);
+
+	// Para borrar la cuenta de un usuario: sus tokens de
+	// recuperación se borran antes que el usuario.
+	void deleteByUsuarioId(Long usuarioId);
 }

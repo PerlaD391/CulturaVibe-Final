@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { emailError, passwordError, passwordChecks, requiredError } from '../utils/validation';
 import { apiErrorMessage, extractFieldErrors } from '../services/api';
 import { crearUsuarioFirebase } from '../services/firebase';
+import { LADA_OTRA, LADA_POR_DEFECTO, unirLada } from '../utils/telefono';
+import SelectorLada from '../components/SelectorLada';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 import VerificarCodigo from './VerificarCodigo';
@@ -22,6 +24,8 @@ export default function Register() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [lada, setLada] = useState(LADA_POR_DEFECTO);
+  const [codigoOtro, setCodigoOtro] = useState('');
   const [rol, setRol] = useState('CLIENTE');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,12 +58,16 @@ export default function Register() {
       confirmPassword: password !== confirmPassword ? 'Las contraseñas no coinciden.' : '',
     };
     if (Object.values(nextErrors).some(Boolean)) return;
+    // El teléfono se manda con la lada elegida (E.164): sin ella, el
+    // código de verificación no llegaría por SMS o WhatsApp a números
+    // fuera de México.
+    const telefonoE164 = unirLada(lada === LADA_OTRA ? codigoOtro : lada, telefono);
     try {
       await register({
         nombre: nombre.trim(),
         email: email.trim(),
         password,
-        telefono: telefono.trim() || undefined,
+        telefono: telefonoE164 || undefined,
         rol,
       });
       // También se crea el usuario en Firebase Auth (mismo correo y
@@ -69,7 +77,7 @@ export default function Register() {
       await crearUsuarioFirebase(email.trim(), password);
       // La cuenta ya se creó (y la sesión quedó iniciada): ahora toca
       // el código de verificación que llegó por correo y por SMS.
-      setVerificacion({ email: email.trim(), telefono: telefono.trim() });
+      setVerificacion({ email: email.trim(), telefono: telefonoE164 });
     } catch (err) {
       const backendFields = extractFieldErrors(err);
       if (Object.keys(backendFields).length > 0) {
@@ -129,14 +137,17 @@ export default function Register() {
             />
           </FormField>
 
-          <FormField label="Teléfono (opcional)" error={fieldErrors.telefono}>
-            <input
-              type="tel"
-              placeholder="Ej. 55 1234 5678"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-              className={inputClass(Boolean(fieldErrors.telefono))}
-            />
+          <FormField label="Teléfono (opcional)" error={fieldErrors.telefono} hint="Elige la lada de tu país: el código de verificación llega por SMS o WhatsApp a ese número.">
+            <span className="flex gap-2">
+              <SelectorLada lada={lada} codigoOtro={codigoOtro} onLadaChange={setLada} onCodigoOtroChange={setCodigoOtro} />
+              <input
+                type="tel"
+                placeholder="Ej. 55 1234 5678"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                className={inputClass(Boolean(fieldErrors.telefono))}
+              />
+            </span>
           </FormField>
 
           <FormField

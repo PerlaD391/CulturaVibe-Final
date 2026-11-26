@@ -4,10 +4,11 @@ import { verificarCodigo, reenviarCodigo, verificarEmailFirebase, verificarTelef
 import {
   firebaseConfigurado,
   recargarUsuarioFirebase,
-  normalizarTelefonoE164,
   enviarCodigoTelefonoFirebase,
   confirmarCodigoTelefonoFirebase,
 } from '../services/firebase';
+import { LADA_OTRA, separarLada, unirLada } from '../utils/telefono';
+import SelectorLada from '../components/SelectorLada';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 
@@ -26,7 +27,12 @@ export default function VerificarCodigo({ email, telefono, onVerificado, onOmiti
   const [verificando, setVerificando] = useState(false);
   const [reenviando, setReenviando] = useState(false);
   const [verificandoFirebase, setVerificandoFirebase] = useState(false);
-  const [telefonoSms, setTelefonoSms] = useState(telefono || '');
+  // El teléfono del registro ya viene en E.164; aquí se separa en
+  // lada y número para poder cambiar la lada al pedir el SMS.
+  const [telefonoInicial] = useState(() => separarLada(telefono || ''));
+  const [telefonoSms, setTelefonoSms] = useState(telefonoInicial.numero);
+  const [ladaSms, setLadaSms] = useState(telefonoInicial.lada);
+  const [codigoOtroSms, setCodigoOtroSms] = useState(telefonoInicial.codigoOtro || '');
   const [codigoSms, setCodigoSms] = useState('');
   const [confirmacionSms, setConfirmacionSms] = useState(null);
   const [enviandoSms, setEnviandoSms] = useState(false);
@@ -100,13 +106,13 @@ export default function VerificarCodigo({ email, telefono, onVerificado, onOmiti
   };
 
   // Verificación de teléfono con Firebase Phone Auth: manda el código
-  // por SMS al número que escribe el usuario.
+  // por SMS al número que escribe el usuario, con la lada elegida.
   const handleEnviarSmsFirebase = async () => {
     setMensajeSms('');
     setErrorSms('');
-    const numero = normalizarTelefonoE164(telefonoSms);
+    const numero = unirLada(ladaSms === LADA_OTRA ? codigoOtroSms : ladaSms, telefonoSms);
     if (!/^\+\d{10,15}$/.test(numero)) {
-      setErrorSms('Escribe un número válido con 10 dígitos (por ejemplo 55 1234 5678).');
+      setErrorSms('Escribe un número válido con su lada (por ejemplo 55 1234 5678 con lada +52).');
       return;
     }
     setEnviandoSms(true);
@@ -215,13 +221,16 @@ export default function VerificarCodigo({ email, telefono, onVerificado, onOmiti
         {firebaseConfigurado ? (
           <form onSubmit={handleConfirmarSmsFirebase} noValidate className="mt-4 space-y-4">
             <FormField label="Teléfono">
-              <input
-                type="tel"
-                placeholder="Ej. 55 1234 5678"
-                value={telefonoSms}
-                onChange={(e) => setTelefonoSms(e.target.value)}
-                className={inputClass(false)}
-              />
+              <span className="flex gap-2">
+                <SelectorLada lada={ladaSms} codigoOtro={codigoOtroSms} onLadaChange={setLadaSms} onCodigoOtroChange={setCodigoOtroSms} />
+                <input
+                  type="tel"
+                  placeholder="Ej. 55 1234 5678"
+                  value={telefonoSms}
+                  onChange={(e) => setTelefonoSms(e.target.value)}
+                  className={inputClass(false)}
+                />
+              </span>
             </FormField>
             <button
               type="button"
