@@ -2,7 +2,10 @@
 // El backend devuelve JWT: {token, tipo: "Bearer", email, nombre, rol}.
 // La sesión se guarda en localStorage (clave culturavibe-auth) y el
 // interceptor de Axios la envía como Authorization: Bearer en cada
-// petición protegida. Ya NO se usa Firebase ni DummyJSON.
+// petición protegida. El login con Google por Firebase y las
+// verificaciones con Firebase van por /api/auth/firebase,
+// /api/auth/verificar-email-firebase y
+// /api/auth/verificar-telefono-firebase. Ya NO se usa DummyJSON.
 import api, { storeAuth, clearStoredAuth, decodeToken } from './api';
 
 export const ROLES = {
@@ -80,6 +83,22 @@ export const verificarCodigo = async ({ email, codigo }) => {
 export const reenviarCodigo = async ({ email }) => {
   const { data } = await api.post('/api/auth/reenviar-codigo', { email });
   return data?.mensaje || data?.message || 'Te enviamos un código nuevo.';
+};
+
+// Verificación de correo con Firebase: el usuario ya abrió el enlace
+// de Firebase; el backend sincroniza email_verificado.
+export const verificarEmailFirebase = async (idToken) => {
+  const { data } = await api.post('/api/auth/verificar-email-firebase', { idToken });
+  return data?.mensaje || data?.message || 'Correo verificado con Firebase correctamente.';
+};
+
+// Verificación de teléfono con Firebase Phone Auth (SMS).
+export const verificarTelefonoFirebase = async (idToken, email) => {
+  const { data } = await api.post('/api/auth/verificar-telefono-firebase', {
+    idToken,
+    ...(email ? { email } : {}),
+  });
+  return data?.mensaje || data?.message || 'Teléfono verificado con Firebase correctamente.';
 };
 
 // Login con Google por Firebase: el ID token de Firebase se manda al

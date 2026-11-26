@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { emailError, passwordError, passwordChecks, requiredError } from '../utils/validation';
 import { apiErrorMessage, extractFieldErrors } from '../services/api';
+import { crearUsuarioFirebase } from '../services/firebase';
 import FormField, { inputClass } from '../components/FormField';
 import Icon from '../components/Icon';
 import VerificarCodigo from './VerificarCodigo';
@@ -10,8 +11,10 @@ import VerificarCodigo from './VerificarCodigo';
 // Registro real contra POST /api/auth/register (JWT). El rol lo elige
 // el usuario: CLIENTE (por defecto) u ORGANIZADOR (empresa); la política
 // de contraseña se valida en tiempo real bajo el campo. Al crear la
-// cuenta se muestra la pantalla del código de verificación (correo y,
-// si dio teléfono, también SMS); se puede omitir con "Hacerlo después".
+// cuenta también se crea el usuario en Firebase Auth (mismo correo y
+// contraseña) para las verificaciones con Firebase, y se muestra la
+// pantalla del código de verificación (correo y, si dio teléfono,
+// también SMS); se puede omitir con "Hacerlo después".
 export default function Register() {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
@@ -59,6 +62,11 @@ export default function Register() {
         telefono: telefono.trim() || undefined,
         rol,
       });
+      // También se crea el usuario en Firebase Auth (mismo correo y
+      // contraseña) para las verificaciones con Firebase. Si Firebase
+      // no está configurado o falla, el registro sigue normal: nunca
+      // se rompe por Firebase.
+      await crearUsuarioFirebase(email.trim(), password);
       // La cuenta ya se creó (y la sesión quedó iniciada): ahora toca
       // el código de verificación que llegó por correo y por SMS.
       setVerificacion({ email: email.trim(), telefono: telefono.trim() });

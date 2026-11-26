@@ -24,10 +24,14 @@
 # VONAGE_API_SECRET=tu_api_secret_de_vonage
 # VONAGE_FROM_NUMBER=tu_numero_virtual_de_vonage
 
-# --- Twilio (solo SMS, respaldo si Vonage no está configurado) ---
+# --- Twilio (SMS de respaldo si Vonage no está configurado, y WhatsApp gratis por el sandbox) ---
 # TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # TWILIO_AUTH_TOKEN=tu_auth_token_de_twilio
 # TWILIO_PHONE_NUMBER=+15551234567
+# WhatsApp por el sandbox de Twilio (gratis, ya activo): el número es
+# +1 737 221 2163 y cada número que deba recibir mensajes tiene que
+# unirse antes mandando "join twilio-trial" por WhatsApp a ese número.
+# TWILIO_WHATSAPP_FROM=whatsapp:+17372212163
 
 # --- WhatsApp con Meta WhatsApp Cloud API (gratis; si están vacías, se omite el WhatsApp) ---
 # El token es temporal (dura 24 h): se genera en developers.facebook.com y

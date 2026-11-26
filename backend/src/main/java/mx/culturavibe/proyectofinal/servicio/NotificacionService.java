@@ -15,14 +15,17 @@ import mx.culturavibe.proyectofinal.modelo.Usuario;
 import mx.culturavibe.proyectofinal.repositorio.NotificacionRepository;
 
 // SMS por Vonage (primero) o Twilio (respaldo) y WhatsApp por Meta
-// WhatsApp Cloud API (ver WhatsAppCloudService). Cada canal se envía
-// solo si está configurado: SMS necesita VONAGE_API_KEY, VONAGE_API_SECRET
-// y VONAGE_FROM_NUMBER, o bien TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y
-// TWILIO_PHONE_NUMBER; WhatsApp necesita WHATSAPP_PHONE_NUMBER_ID y
-// WHATSAPP_ACCESS_TOKEN. Twilio trial no deja comprar número sin upgrade,
-// por eso Vonage va primero. Si un canal no está configurado, se registra
-// un warn y se sigue; la reserva se crea igual. Cada intento (enviado o
-// fallido) queda guardado en notificaciones.
+// WhatsApp Cloud API (ver WhatsAppCloudService) o, de respaldo, por el
+// sandbox de Twilio (ver TwilioWhatsAppService), que es gratis. Cada
+// canal se envía solo si está configurado: SMS necesita VONAGE_API_KEY,
+// VONAGE_API_SECRET y VONAGE_FROM_NUMBER, o bien TWILIO_ACCOUNT_SID,
+// TWILIO_AUTH_TOKEN y TWILIO_PHONE_NUMBER; WhatsApp necesita
+// WHATSAPP_PHONE_NUMBER_ID y WHATSAPP_ACCESS_TOKEN (Meta) o
+// TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN (sandbox). Twilio trial no
+// deja comprar número sin upgrade, por eso Vonage va primero. Si un
+// canal no está configurado, se registra un warn y se sigue; la reserva
+// se crea igual. Cada intento (enviado o fallido) queda guardado en
+// notificaciones.
 @Service
 public class NotificacionService {
 
@@ -33,6 +36,8 @@ public class NotificacionService {
 	private final VonageSmsService vonage;
 
 	private final WhatsAppCloudService whatsapp;
+
+	private final TwilioWhatsAppService twilioWhatsapp;
 
 	@Value("${app.twilio.account-sid:}")
 	private String accountSid;
@@ -46,10 +51,11 @@ public class NotificacionService {
 	private boolean inicializado = false;
 
 	public NotificacionService(NotificacionRepository notificaciones, VonageSmsService vonage,
-			WhatsAppCloudService whatsapp) {
+			WhatsAppCloudService whatsapp, TwilioWhatsAppService twilioWhatsapp) {
 		this.notificaciones = notificaciones;
 		this.vonage = vonage;
 		this.whatsapp = whatsapp;
+		this.twilioWhatsapp = twilioWhatsapp;
 	}
 
 	// Se llama al crear una reserva: SMS por Vonage o Twilio y WhatsApp por
@@ -89,20 +95,13 @@ public class NotificacionService {
 			log.warn("Ni Vonage ni Twilio están configurados; el código de verificación de {} no va por SMS",
 					usuario.getEmail());
 		}
-		// WhatsApp: el mismo código, con la plantilla de código
-		// (WHATSAPP_TEMPLATE_CODIGO). Si WhatsApp no está configurado
-		// o la plantilla no existe, solo queda el warn y el código
-		// sigue llegando por correo y SMS.
-		if (whatsapp.configurado()) {
-			if (whatsapp.enviarCodigoVerificacion(telefono, codigo)) {
-				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
-			} else {
-				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
-			}
+		// WhatsApp: el mismo código. Por Meta va con la plantilla de
+		// código (WHATSAPP_TEMPLATE_CODIGO); por el sandbox de Twilio
+		// va como texto libre. Si ningún WhatsApp está configurado o
+		// la plantilla no existe, solo queda el warn y el código sigue
+		// llegando por correo y SMS.
+		if (enviarCodigoPorWhatsapp(usuario, telefono, codigo, texto)) {
 			enviado = true;
-		} else {
-			log.warn("WhatsApp Cloud API no está configurada; el código de verificación de {} no va por WhatsApp",
-					usuario.getEmail());
 		}
 		if (!enviado) {
 			log.warn("El código de verificación de {} solo va por correo", usuario.getEmail());
@@ -142,17 +141,52 @@ public class NotificacionService {
 		}
 	}
 
+	// WhatsApp por Meta si está configurado; si no, por el sandbox
+	// de Twilio (gratis); si ninguno lo está, solo queda el warn.
 	private void enviarWhatsapp(Usuario usuario, String telefono, String texto) {
-		if (!whatsapp.configurado()) {
-			log.warn("WhatsApp Cloud API no está configurada (faltan WHATSAPP_PHONE_NUMBER_ID o WHATSAPP_ACCESS_TOKEN); no se envía WhatsApp a {}",
-					usuario.getEmail());
+		if (whatsapp.configurado()) {
+			if (whatsapp.enviarConfirmacion(telefono, texto)) {
+				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
+			} else {
+				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+			}
 			return;
 		}
-		if (whatsapp.enviarConfirmacion(telefono, texto)) {
-			guardar(usuario, "WHATSAPP", texto, "ENVIADA");
-		} else {
-			guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+		if (twilioWhatsapp.configurado()) {
+			if (twilioWhatsapp.enviarMensaje(telefono, texto)) {
+				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
+			} else {
+				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+			}
+			return;
 		}
+		log.warn("WhatsApp no está configurado (ni Meta Cloud API ni el sandbox de Twilio); no se envía WhatsApp a {}",
+				usuario.getEmail());
+	}
+
+	// El código de verificación por WhatsApp: Meta si está
+	// configurado, si no el sandbox de Twilio. Devuelve true si se
+	// intentó el envío por algún canal.
+	private boolean enviarCodigoPorWhatsapp(Usuario usuario, String telefono, String codigo, String texto) {
+		if (whatsapp.configurado()) {
+			if (whatsapp.enviarCodigoVerificacion(telefono, codigo)) {
+				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
+			} else {
+				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+			}
+			return true;
+		}
+		if (twilioWhatsapp.configurado()) {
+			if (twilioWhatsapp.enviarMensaje(telefono, texto)) {
+				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
+			} else {
+				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+			}
+			return true;
+		}
+		log.warn("WhatsApp no está configurado (ni Meta Cloud API ni el sandbox de Twilio); el código de verificación de {} no va por WhatsApp",
+				usuario.getEmail());
+		return false;
 	}
 
 	private boolean twilioConfigurado() {

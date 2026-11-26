@@ -25,6 +25,7 @@ import mx.culturavibe.proyectofinal.dto.RegistroDTO;
 import mx.culturavibe.proyectofinal.dto.RestablecerPasswordDTO;
 import mx.culturavibe.proyectofinal.dto.UsuarioDTO;
 import mx.culturavibe.proyectofinal.dto.VerificarCodigoDTO;
+import mx.culturavibe.proyectofinal.dto.VerificarTelefonoFirebaseDTO;
 import mx.culturavibe.proyectofinal.servicio.AuthService;
 
 @RestController
@@ -100,6 +101,22 @@ public class AuthController {
 	@PostMapping("/firebase")
 	public AuthRespuesta loginConFirebase(@Valid @RequestBody FirebaseLoginDTO dto) {
 		return authService.loginConFirebase(dto.idToken());
+	}
+
+	// Sincroniza la verificación de correo de Firebase (el usuario ya
+	// abrió el enlace que Firebase le mandó). Responde 503 si Firebase
+	// no está configurado y 400 si el correo aún no está verificado.
+	@PostMapping("/verificar-email-firebase")
+	public ResponseEntity<Map<String, String>> verificarEmailFirebase(@Valid @RequestBody FirebaseLoginDTO dto) {
+		return ResponseEntity.ok(Map.of("mensaje", authService.verificarEmailFirebase(dto.idToken())));
+	}
+
+	// Sincroniza la verificación de teléfono de Firebase (Phone Auth
+	// por SMS). El token trae el número verificado; el correo solo
+	// hace falta cuando el token es solo de teléfono (sin correo).
+	@PostMapping("/verificar-telefono-firebase")
+	public ResponseEntity<Map<String, String>> verificarTelefonoFirebase(@Valid @RequestBody VerificarTelefonoFirebaseDTO dto) {
+		return ResponseEntity.ok(Map.of("mensaje", authService.verificarTelefonoFirebase(dto.idToken(), dto.email())));
 	}
 
 	// Perfil del usuario del token Bearer. Lo usa el login con Google,

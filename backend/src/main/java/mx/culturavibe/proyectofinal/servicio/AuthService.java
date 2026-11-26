@@ -328,30 +328,111 @@ public class AuthService implements UserDetailsService {
 				usuario.getRol().getNombre());
 	}
 
+	// Verifica el ID token de Firebase. Responde 503 si Firebase no
+	// está configurado en el servidor y 401 si el token no es válido.
+	private FirebaseToken verificarTokenFirebase(String idToken) {
+		FirebaseApp app = firebaseApp.getIfAvailable();
+		if (app == null) {
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+					"Firebase no está configurado en el servidor");
+		}
+		try {
+			return FirebaseAuth.getInstance(app).verifyIdToken(idToken);
+		} catch (FirebaseAuthException e) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+					"El token de Firebase no es válido");
+		}
+	}
+
 	// Login con Firebase Auth (Google por Firebase): verifica el ID
 	// token de Firebase, toma el correo y el nombre del token y entra
 	// con la cuenta del sistema (la crea como CLIENTE si no existe,
 	// igual que loginConGoogle). Si Firebase no está configurado en
 	// el servidor responde 503; si el token es inválido, 401.
 	public AuthRespuesta loginConFirebase(String idToken) {
-		FirebaseApp app = firebaseApp.getIfAvailable();
-		if (app == null) {
-			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-					"El login con Firebase no está configurado en el servidor");
-		}
-		FirebaseToken tokenFirebase;
-		try {
-			tokenFirebase = FirebaseAuth.getInstance(app).verifyIdToken(idToken);
-		} catch (FirebaseAuthException e) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-					"El token de Firebase no es válido");
-		}
+		FirebaseToken tokenFirebase = verificarTokenFirebase(idToken);
 		String email = tokenFirebase.getEmail();
 		if (email == null || email.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
 					"El token de Firebase no trae correo electrónico");
 		}
 		return loginConGoogle(email, tokenFirebase.getName());
+	}
+
+	// --- Verificación con Firebase Auth ---
+
+	// Sincroniza la verificación de correo de Firebase: el usuario ya
+	// abrió el enlace que Firebase le mandó por correo y el frontend
+	// llama aquí con un ID token fresco. Solo marca email_verificado
+	// si el token dice que el correo ya está verificado en Firebase.
+	public String verificarEmailFirebase(String idToken) {
+		FirebaseToken tokenFirebase = verificarTokenFirebase(idToken);
+		if (!tokenFirebase.isEmailVerified()) {
+			throw new IllegalArgumentException(
+					"El correo aún no está verificado en Firebase. Abre el enlace que te llegó por correo y luego vuelve a intentarlo.");
+		}
+		String email = tokenFirebase.getEmail();
+		if (email == null || email.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+					"El token de Firebase no trae correo electrónico");
+		}
+		Usuario usuario = usuarios.findByEmailIgnoreCase(email)
+				.orElseThrow(() -> new NoSuchElementException("No existe un usuario con el correo " + email));
+		usuario.setEmailVerificado(true);
+		usuarios.save(usuario);
+		return "Correo verificado con Firebase correctamente";
+	}
+
+	// Sincroniza la verificación de teléfono de Firebase (Phone Auth
+	// por SMS): el token trae el número verificado. Busca la cuenta
+	// por el correo del token (o por el correo que manda el frontend
+	// cuando el token es solo de teléfono) y marca telefono_verificado;
+	// si la cuenta no tiene teléfono guardado, guarda el del token.
+	public String verificarTelefonoFirebase(String idToken, String email) {
+		FirebaseToken tokenFirebase = verificarTokenFirebase(idToken);
+		// El número verificado viaja en el claim "phone_number" del
+		// token (FirebaseToken no tiene getPhoneNumber()).
+		Object telefonoClaim = tokenFirebase.getClaims().get("phone_number");
+		String telefonoToken = telefonoClaim == null ? null : String.valueOf(telefonoClaim);
+		if (telefonoToken == null || telefonoToken.isBlank()) {
+			throw new IllegalArgumentException(
+					"El token de Firebase no trae un número de teléfono verificado");
+		}
+		String correoToken = tokenFirebase.getEmail();
+		String correo = (correoToken == null || correoToken.isBlank()) && email != null && !email.isBlank()
+				? email.trim()
+				: correoToken;
+		if (correo == null || correo.isBlank()) {
+			throw new IllegalArgumentException(
+					"No se pudo identificar la cuenta. Vuelve a intentarlo desde el registro.");
+		}
+		final String correoFinal = correo;
+		Usuario usuario = usuarios.findByEmailIgnoreCase(correoFinal)
+				.orElseThrow(() -> new NoSuchElementException("No existe un usuario con el correo " + correoFinal));
+		String telefonoNormalizado = normalizarTelefono(telefonoToken);
+		if (usuario.getTelefono() == null || usuario.getTelefono().isBlank()) {
+			usuario.setTelefono(telefonoNormalizado);
+		}
+		usuario.setTelefonoVerificado(true);
+		usuarios.save(usuario);
+		return "Teléfono verificado con Firebase correctamente";
+	}
+
+	// Normaliza un teléfono a formato E.164: quita espacios, guiones
+	// y paréntesis; si es un número mexicano de 10 dígitos sin
+	// prefijo, agrega +52; si trae 52 sin '+', lo agrega.
+	private String normalizarTelefono(String telefono) {
+		String limpio = telefono.replaceAll("[\\s\\-().]", "");
+		if (limpio.startsWith("+")) {
+			return limpio;
+		}
+		if (limpio.length() == 12 && limpio.startsWith("52")) {
+			return "+" + limpio;
+		}
+		if (limpio.length() == 10) {
+			return "+52" + limpio;
+		}
+		return limpio;
 	}
 
 	// Perfil del usuario del token (para el login con Google, que llega
