@@ -30,16 +30,20 @@ public class WhatsAppCloudService {
 
 	private final String templateName;
 
+	private final String templateCodigo;
+
 	private final RestClient restClient;
 
 	public WhatsAppCloudService(
 			@Value("${app.whatsapp.phone-number-id:}") String phoneNumberId,
 			@Value("${app.whatsapp.access-token:}") String accessToken,
 			@Value("${app.whatsapp.template-name:hello_world}") String templateName,
+			@Value("${app.whatsapp.template-codigo:codigo_verificacion}") String templateCodigo,
 			@Value("${app.whatsapp.api-base-url:https://graph.facebook.com/v21.0}") String apiBaseUrl) {
 		this.phoneNumberId = phoneNumberId;
 		this.accessToken = accessToken;
 		this.templateName = templateName;
+		this.templateCodigo = templateCodigo;
 		// Cliente HTTP del JDK (java.net.http): el RestClient por defecto usa
 		// Apache HttpClient 5 si lo encuentra en el classpath, y en este
 		// proyecto Twilio lo trae sin su dependencia httpcore5-h2, lo que
@@ -96,6 +100,49 @@ public class WhatsAppCloudService {
 			return true;
 		} catch (Exception e) {
 			log.warn("No se pudo enviar el WhatsApp a {}: {}", destino, e.getMessage());
+			return false;
+		}
+	}
+
+	// Código de verificación de 6 dígitos por WhatsApp. Usa la
+	// plantilla de código (WHATSAPP_TEMPLATE_CODIGO), que debe existir
+	// en Meta con una variable {{1}} para el código: la plantilla
+	// hello_world no lleva variables, así que el código no se puede
+	// mandar con ella. Si la plantilla no existe o no está aprobada,
+	// Meta responde 400, solo queda el warn y el código sigue llegando
+	// por correo y SMS. Devuelve true si Meta respondió 2xx.
+	public boolean enviarCodigoVerificacion(String telefono, String codigo) {
+		if (!configurado()) {
+			log.warn("WhatsApp Cloud API no está configurada (faltan WHATSAPP_PHONE_NUMBER_ID o WHATSAPP_ACCESS_TOKEN); no se envía el código por WhatsApp");
+			return false;
+		}
+		// La Cloud API quiere el número solo con dígitos, sin '+' ni espacios.
+		String destino = telefono.replace(" ", "").replace("-", "").replace("+", "");
+		Map<String, Object> parametro = Map.of("type", "text", "text", codigo);
+		Map<String, Object> componente = new LinkedHashMap<>();
+		componente.put("type", "body");
+		componente.put("parameters", java.util.List.of(parametro));
+		Map<String, Object> plantilla = new LinkedHashMap<>();
+		plantilla.put("name", templateCodigo);
+		plantilla.put("language", Map.of("code", "es_MX"));
+		plantilla.put("components", java.util.List.of(componente));
+		Map<String, Object> cuerpo = new LinkedHashMap<>();
+		cuerpo.put("messaging_product", "whatsapp");
+		cuerpo.put("to", destino);
+		cuerpo.put("type", "template");
+		cuerpo.put("template", plantilla);
+		try {
+			restClient.post()
+					.uri("/{phoneNumberId}/messages", phoneNumberId)
+					.header("Authorization", "Bearer " + accessToken)
+					.contentType(MediaType.APPLICATION_JSON)
+					.body(cuerpo)
+					.retrieve()
+					.toBodilessEntity();
+			log.info("Código de verificación enviado por WhatsApp a {} (plantilla {})", destino, templateCodigo);
+			return true;
+		} catch (Exception e) {
+			log.warn("No se pudo enviar el código por WhatsApp a {}: {}", destino, e.getMessage());
 			return false;
 		}
 	}

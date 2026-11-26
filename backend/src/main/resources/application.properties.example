@@ -35,6 +35,10 @@
 # WHATSAPP_PHONE_NUMBER_ID=tu_phone_number_id
 # WHATSAPP_ACCESS_TOKEN=tu_token_temporal_de_meta
 # WHATSAPP_TEMPLATE_NAME=hello_world
+# Plantilla del código de verificación (debe existir en Meta con una
+# variable {{1}} para el código; se crea en el administrador de
+# WhatsApp → Plantillas de mensajes y se espera su aprobación).
+# WHATSAPP_TEMPLATE_CODIGO=codigo_verificacion
 
 # --- Login con Google (OAuth2; si están vacías, la app arranca igual y el botón no funciona) ---
 # Se crean en Google Cloud Console (console.cloud.google.com → APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web).
@@ -42,6 +46,21 @@
 # (en local: http://localhost:8086/login/oauth2/code/google).
 # GOOGLE_CLIENT_ID=tu_id_de_cliente_de_google
 # GOOGLE_CLIENT_SECRET=<redacted>
+
+# --- Login con Facebook (OAuth2; si están vacías, la app arranca igual y el botón no funciona) ---
+# Se crean en developers.facebook.com (crear app → agregar el producto
+# Facebook Login → Configuración → ID de app y clave secreta de la app).
+# La URI de redirección autorizada debe ser https://culturavibe.duckdns.org/login/oauth2/code/facebook
+# (en local: http://localhost:8086/login/oauth2/code/facebook).
+# FACEBOOK_CLIENT_ID=tu_id_de_app_de_facebook
+# FACEBOOK_CLIENT_SECRET=<redacted>
+
+# --- Login con Firebase Auth (Google por Firebase; si está vacío, la app arranca igual y POST /api/auth/firebase responde 503) ---
+# La llave se genera en Firebase Console → Configuración del proyecto →
+# Cuentas de servicio → Generar nueva clave privada. El JSON se sube al
+# VPS (por ejemplo /opt/springboot-final/firebase-service-account.json)
+# y su ruta se pasa por variable de entorno; nunca va en el repositorio.
+# FIREBASE_SERVICE_ACCOUNT=/opt/springboot-final/firebase-service-account.json
 
 # --- Ticketmaster (sincronización de eventos a MySQL) ---
 # La llave se genera en developer.ticketmaster.com y se pasa por

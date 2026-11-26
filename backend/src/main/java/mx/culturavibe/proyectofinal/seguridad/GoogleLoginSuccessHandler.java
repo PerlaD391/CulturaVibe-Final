@@ -15,10 +15,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import mx.culturavibe.proyectofinal.dto.AuthRespuesta;
 import mx.culturavibe.proyectofinal.servicio.AuthService;
 
-// Tras iniciar sesión con Google: busca o crea la cuenta en
-// CulturaVibe, genera el JWT propio de la app y redirige al
-// frontend con el token en la URL (/login?token=...). La contraseña
-// de Google nunca se pide ni se guarda.
+// Tras iniciar sesión con un proveedor OAuth2 (Google o Facebook):
+// busca o crea la cuenta en CulturaVibe, genera el JWT propio de la
+// app y redirige al frontend con el token en la URL
+// (/login?token=...). Sirve para cualquier proveedor que devuelva
+// correo y nombre. La contraseña del proveedor nunca se pide ni se
+// guarda. Si el proveedor no devolvió correo, se vuelve al login con
+// ?error=<proveedor> (google o facebook).
 @Component
 public class GoogleLoginSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -34,6 +37,10 @@ public class GoogleLoginSuccessHandler implements AuthenticationSuccessHandler {
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 			Authentication authentication) throws IOException, ServletException {
+		String proveedor = "google";
+		if (authentication instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken token) {
+			proveedor = token.getAuthorizedClientRegistrationId();
+		}
 		String email = null;
 		String nombre = null;
 		Object principal = authentication.getPrincipal();
@@ -45,7 +52,7 @@ public class GoogleLoginSuccessHandler implements AuthenticationSuccessHandler {
 			nombre = oauth2.getAttribute("name");
 		}
 		if (email == null || email.isBlank()) {
-			response.sendRedirect(frontendUrl + "/login?error=google");
+			response.sendRedirect(frontendUrl + "/login?error=" + proveedor);
 			return;
 		}
 		AuthRespuesta auth = authService.loginConGoogle(email, nombre);

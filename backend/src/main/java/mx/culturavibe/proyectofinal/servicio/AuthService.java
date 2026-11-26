@@ -5,6 +5,11 @@ import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -70,6 +75,10 @@ public class AuthService implements UserDetailsService {
 
 	private final NotificacionService notificaciones;
 
+	// Firebase Auth (login con Google por Firebase). ObjectProvider
+	// porque FirebaseApp puede ser null si no está configurado.
+	private final ObjectProvider<FirebaseApp> firebaseApp;
+
 	public AuthService(UsuarioRepository usuarios, RolRepository roles,
 			TokenRevocadoRepository tokensRevocados,
 			TokenRecuperacionRepository tokensRecuperacion,
@@ -77,7 +86,7 @@ public class AuthService implements UserDetailsService {
 			PasswordEncoder passwordEncoder,
 			ObjectProvider<AuthenticationManager> authenticationManager,
 			JwtService jwtService, EmailService emailService,
-			NotificacionService notificaciones) {
+			NotificacionService notificaciones, ObjectProvider<FirebaseApp> firebaseApp) {
 		this.usuarios = usuarios;
 		this.roles = roles;
 		this.tokensRevocados = tokensRevocados;
@@ -88,6 +97,7 @@ public class AuthService implements UserDetailsService {
 		this.jwtService = jwtService;
 		this.emailService = emailService;
 		this.notificaciones = notificaciones;
+		this.firebaseApp = firebaseApp;
 	}
 
 	@Override
@@ -316,6 +326,32 @@ public class AuthService implements UserDetailsService {
 		String token = jwtService.generarToken(usuario.getEmail());
 		return AuthRespuesta.conToken(token, usuario.getEmail(), usuario.getNombre(),
 				usuario.getRol().getNombre());
+	}
+
+	// Login con Firebase Auth (Google por Firebase): verifica el ID
+	// token de Firebase, toma el correo y el nombre del token y entra
+	// con la cuenta del sistema (la crea como CLIENTE si no existe,
+	// igual que loginConGoogle). Si Firebase no está configurado en
+	// el servidor responde 503; si el token es inválido, 401.
+	public AuthRespuesta loginConFirebase(String idToken) {
+		FirebaseApp app = firebaseApp.getIfAvailable();
+		if (app == null) {
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+					"El login con Firebase no está configurado en el servidor");
+		}
+		FirebaseToken tokenFirebase;
+		try {
+			tokenFirebase = FirebaseAuth.getInstance(app).verifyIdToken(idToken);
+		} catch (FirebaseAuthException e) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+					"El token de Firebase no es válido");
+		}
+		String email = tokenFirebase.getEmail();
+		if (email == null || email.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+					"El token de Firebase no trae correo electrónico");
+		}
+		return loginConGoogle(email, tokenFirebase.getName());
 	}
 
 	// Perfil del usuario del token (para el login con Google, que llega

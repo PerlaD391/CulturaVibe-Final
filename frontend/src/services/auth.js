@@ -82,6 +82,13 @@ export const reenviarCodigo = async ({ email }) => {
   return data?.mensaje || data?.message || 'Te enviamos un código nuevo.';
 };
 
+// Login con Google por Firebase: el ID token de Firebase se manda al
+// backend y se entra con el flujo normal (el JWT propio de la app).
+export const loginConFirebase = async (idToken) => {
+  const { data } = await api.post('/api/auth/firebase', { idToken });
+  return loginConToken(data.token);
+};
+
 // Login con Google: el backend redirige a /login?token=<JWT>. El
 // token solo trae el correo, así que el perfil (nombre y rol) se
 // pide a GET /api/auth/me con ese mismo token.

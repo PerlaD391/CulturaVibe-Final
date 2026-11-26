@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
 import mx.culturavibe.proyectofinal.dto.AuthRespuesta;
+import mx.culturavibe.proyectofinal.dto.FirebaseLoginDTO;
 import mx.culturavibe.proyectofinal.dto.LoginDTO;
 import mx.culturavibe.proyectofinal.dto.OlvidoPasswordDTO;
 import mx.culturavibe.proyectofinal.dto.ReenviarCodigoDTO;
@@ -91,6 +92,14 @@ public class AuthController {
 	@PostMapping("/reenviar-codigo")
 	public ResponseEntity<Map<String, String>> reenviarCodigo(@Valid @RequestBody ReenviarCodigoDTO dto) {
 		return ResponseEntity.ok(Map.of("mensaje", authService.reenviarCodigo(dto)));
+	}
+
+	// Login con Firebase Auth (Google por Firebase): el frontend manda
+	// el ID token de Firebase y el backend responde con el JWT propio.
+	// Responde 503 si Firebase no está configurado en el servidor.
+	@PostMapping("/firebase")
+	public AuthRespuesta loginConFirebase(@Valid @RequestBody FirebaseLoginDTO dto) {
+		return authService.loginConFirebase(dto.idToken());
 	}
 
 	// Perfil del usuario del token Bearer. Lo usa el login con Google,

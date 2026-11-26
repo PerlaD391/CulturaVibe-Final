@@ -67,25 +67,47 @@ public class NotificacionService {
 		enviarWhatsapp(usuario, telefono, texto);
 	}
 
-	// Código de verificación por SMS al registrarse. Devuelve true si
-	// se intentó el envío (hay teléfono y un proveedor configurado);
-	// si no hay teléfono o no hay proveedor, solo queda el warn y el
-	// registro sigue solo con el correo. Nunca lanza excepciones.
+	// Código de verificación por SMS y por WhatsApp al registrarse.
+	// Devuelve true si se intentó el envío por algún canal (hay
+	// teléfono y al menos un canal configurado); si no hay teléfono o
+	// no hay ningún canal, solo queda el warn y el registro sigue solo
+	// con el correo. Nunca lanza excepciones. El código es el mismo en
+	// todos los canales y su expiración no cambia.
 	public boolean enviarCodigoVerificacion(Usuario usuario, String codigo) {
 		if (usuario.getTelefono() == null || usuario.getTelefono().isBlank()) {
 			log.warn("El usuario {} no tiene teléfono; el código de verificación solo va por correo",
 					usuario.getEmail());
 			return false;
 		}
-		if (!vonage.configurado() && !twilioConfigurado()) {
-			log.warn("Ni Vonage ni Twilio están configurados; el código de verificación de {} solo va por correo",
-					usuario.getEmail());
-			return false;
-		}
 		String telefono = usuario.getTelefono().replace(" ", "");
 		String texto = "CulturaVibe: tu código de verificación es " + codigo + ". Válido por 15 minutos.";
-		enviarSms(usuario, telefono, texto);
-		return true;
+		boolean enviado = false;
+		if (vonage.configurado() || twilioConfigurado()) {
+			enviarSms(usuario, telefono, texto);
+			enviado = true;
+		} else {
+			log.warn("Ni Vonage ni Twilio están configurados; el código de verificación de {} no va por SMS",
+					usuario.getEmail());
+		}
+		// WhatsApp: el mismo código, con la plantilla de código
+		// (WHATSAPP_TEMPLATE_CODIGO). Si WhatsApp no está configurado
+		// o la plantilla no existe, solo queda el warn y el código
+		// sigue llegando por correo y SMS.
+		if (whatsapp.configurado()) {
+			if (whatsapp.enviarCodigoVerificacion(telefono, codigo)) {
+				guardar(usuario, "WHATSAPP", texto, "ENVIADA");
+			} else {
+				guardar(usuario, "WHATSAPP", texto, "FALLIDA");
+			}
+			enviado = true;
+		} else {
+			log.warn("WhatsApp Cloud API no está configurada; el código de verificación de {} no va por WhatsApp",
+					usuario.getEmail());
+		}
+		if (!enviado) {
+			log.warn("El código de verificación de {} solo va por correo", usuario.getEmail());
+		}
+		return enviado;
 	}
 
 	// El SMS sale por Vonage si está configurado; si no, por Twilio si

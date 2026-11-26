@@ -28,11 +28,23 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Sesión que llega con el JWT en la URL (login con Google).
+  // Sesión que llega con el JWT en la URL (login con Google o Facebook).
   const loginConToken = useCallback(async (token) => {
     setLoading(true);
     try {
       const next = await authService.loginConToken(token);
+      setAuth(next);
+      return next;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Sesión que llega con el JWT de Firebase (login con Google por Firebase).
+  const loginConFirebase = useCallback(async (idToken) => {
+    setLoading(true);
+    try {
+      const next = await authService.loginConFirebase(idToken);
       setAuth(next);
       return next;
     } finally {
@@ -77,6 +89,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     loginConToken,
+    loginConFirebase,
     register,
     logout,
     updateProfile,
