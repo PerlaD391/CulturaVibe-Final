@@ -62,6 +62,27 @@ public class GoogleOAuth2Config {
 					.clientName("Facebook")
 					.build());
 		}
+		// InMemoryClientRegistrationRepository rechaza una lista vacía
+		// ("registrations cannot be empty") y tumbaría el arranque cuando
+		// ningún proveedor está configurado. Se deja un registro provisional
+		// para que la app arranque igual; los botones de Google/Facebook no
+		// funcionan hasta configurar credenciales reales.
+		if (registros.isEmpty()) {
+			registros.add(ClientRegistration.withRegistrationId("google")
+					.clientId("sin-configurar")
+					.clientSecret("sin-configurar")
+					.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+					.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+					.redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+					.scope("openid", "profile", "email")
+					.authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+					.tokenUri("https://oauth2.googleapis.com/token")
+					.userInfoUri("https://openidconnect.googleapis.com/v1/userinfo")
+					.userNameAttributeName("sub")
+					.jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+					.clientName("Google")
+					.build());
+		}
 		return new InMemoryClientRegistrationRepository(registros);
 	}
 }
