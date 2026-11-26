@@ -66,16 +66,31 @@ public class TwilioWhatsAppService {
 
 	// El destino va como whatsapp:+52... (E.164 con el prefijo
 	// "whatsapp:"); el remitente igual. Si el valor configurado no
-	// trae el prefijo, se agrega.
+	// trae el prefijo, se agrega. El teléfono que el usuario escribe
+	// al registrarse muchas veces viene sin código de país (10 dígitos);
+	// sin el +52 Twilio no lo reconoce como el número verificado del
+	// sandbox y responde 572002, así que aquí se normaliza a E.164.
 	private String comoWhatsapp(String telefono) {
-		String limpio = telefono.replace(" ", "").replace("-", "");
+		String limpio = telefono.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
 		if (limpio.startsWith("whatsapp:")) {
 			return limpio;
 		}
-		if (!limpio.startsWith("+")) {
-			limpio = "+" + limpio;
+		return "whatsapp:" + aE164(limpio);
+	}
+
+	// Normaliza a E.164: número mexicano de 10 dígitos → +52...;
+	// 12 dígitos que empiezan con 52 → +...; si ya trae +, se queda.
+	private static String aE164(String limpio) {
+		if (limpio.startsWith("+")) {
+			return limpio;
 		}
-		return "whatsapp:" + limpio;
+		if (limpio.length() == 10) {
+			return "+52" + limpio;
+		}
+		if (limpio.length() == 12 && limpio.startsWith("52")) {
+			return "+" + limpio;
+		}
+		return "+" + limpio;
 	}
 
 	// Construye el formulario exacto que pide la API de Twilio.

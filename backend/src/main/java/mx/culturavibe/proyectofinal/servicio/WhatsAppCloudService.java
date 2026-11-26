@@ -77,6 +77,19 @@ public class WhatsAppCloudService {
 	}
 
 	// Envía el mensaje de plantilla al teléfono del usuario.
+	// Normaliza a solo dígitos con código de país: un número mexicano
+	// de 10 dígitos (sin +52) se manda como 52...; si ya trae el 52
+	// (12 dígitos) o el +, se queda. Sin esto, un teléfono guardado
+	// como "9515928701" llegaría a Meta como 9515928701 y no como
+	// 529515928701, y el mensaje no se entregaría.
+	private static String aDigitos(String telefono) {
+		String limpio = telefono.replace(" ", "").replace("-", "").replace("(", "").replace(")", "").replace("+", "");
+		if (limpio.length() == 10) {
+			return "52" + limpio;
+		}
+		return limpio;
+	}
+
 	// Devuelve true si Meta respondió 2xx; false si no está configurado
 	// o si la llamada falló (en ese caso solo queda el warn en el log).
 	// El texto de la reserva solo se usa en el log: la plantilla
@@ -87,7 +100,7 @@ public class WhatsAppCloudService {
 			return false;
 		}
 		// La Cloud API quiere el número solo con dígitos, sin '+' ni espacios.
-		String destino = telefono.replace(" ", "").replace("-", "").replace("+", "");
+		String destino = aDigitos(telefono);
 		try {
 			restClient.post()
 					.uri("/{phoneNumberId}/messages", phoneNumberId)
@@ -117,7 +130,7 @@ public class WhatsAppCloudService {
 			return false;
 		}
 		// La Cloud API quiere el número solo con dígitos, sin '+' ni espacios.
-		String destino = telefono.replace(" ", "").replace("-", "").replace("+", "");
+		String destino = aDigitos(telefono);
 		Map<String, Object> parametro = Map.of("type", "text", "text", codigo);
 		Map<String, Object> componente = new LinkedHashMap<>();
 		componente.put("type", "body");
